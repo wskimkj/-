@@ -310,7 +310,7 @@ const EXTRA_COLS = [
 const OUTPUT_HEADERS = [
   "요청일",
   "수령인","배송수단","운송장 번호","받는분연락처","받는분 기타연락처","주소","배송메세지",
-  "상품명","재고","수량","결제금액","큐텐(한글상품명)","바코드","큐텐바코드",
+  "상품명","수량","결제금액","큐텐(한글상품명)","바코드","큐텐바코드",
   "상품코드","쇼핑몰(참고용)","상품컬러코드","상품명(수집)","옵션(수집)","주문자명",
   "비고"
 ];
@@ -470,6 +470,20 @@ function stockQtyLabel_(colorCodeRaw){
   return String(stockMap.get(code));
 }
 
+  //
+function stripStockTag_(s){
+  return String(s ?? "").replace(/\s*\[재고:.*?\]\s*/g, " ").trim();
+}
+
+function attachStockToRequestDate_(reqDate, colorCode){
+  const base = stripStockTag_(reqDate);
+  const code = normColorCode(colorCode);
+  let qtyLabel = "미등록";
+  if(code && stockMap.has(code)) qtyLabel = String(stockMap.get(code));
+  const tag = `[재고:${qtyLabel}]`;
+  return base ? `${base}  ${tag}` : tag;
+}
+
 // 재고시트 A 매칭 → F(상품명)+I(칼라명) 조합
 function nameFromStock_(colorCodeRaw){
   const code = normColorCode(colorCodeRaw);
@@ -583,6 +597,9 @@ function buildOutFromSheetRow(row){
 
   // 재고/표시용 채움
   o["재고"] = stockQtyLabel_(o["상품컬러코드"]);
+
+  o["요청일"] = attachStockToRequestDate_(o["요청일"], o["상품컬러코드"]);
+
 
   return o;
 }
@@ -785,7 +802,8 @@ function applyChange(){
 
       // 변경된 경우: 재고시트 기준 상품명(F+I)로 덮어쓰기
       copy["상품명"] = nameFromStock_(newColor);
-      copy["재고"] = stockQtyLabel_(newColor);
+      copy["요청일"] = attachStockToRequestDate_(copy["요청일"], newColor);
+
     }else{
       // 비선택 행도 재고 표시가 비어있지 않게 보정
       if(copy["재고"] === "") copy["재고"] = stockQtyLabel_(copy["상품컬러코드"]);
