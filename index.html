@@ -767,12 +767,7 @@ function buildTSV(outRows){
   return lines.join("\n");
 }
 function buildHTMLTable(outRows){
-  const thStyle = "border:1px solid #ddd;padding:6px 8px;text-align:center;vertical-align:middle;font-weight:700;background:#fff;";
   const tdStyle = "border:1px solid #eee;padding:6px 8px;text-align:center;vertical-align:middle;";
-
-  const thead = `<tr>${
-    TABLE_COLS.map(c => `<th style="${thStyle}">${escapeHtml(c.label)}</th>`).join("")
-  }</tr>`;
 
   const tbody = outRows.map(o => {
     const tds = TABLE_COLS.map(c =>
@@ -781,13 +776,14 @@ function buildHTMLTable(outRows){
     return `<tr>${tds}</tr>`;
   }).join("");
 
+  // ✅ thead(헤더) 없이 tbody만 반환
   return `
     <table style="border-collapse:collapse;">
-      <thead>${thead}</thead>
       <tbody>${tbody}</tbody>
     </table>
   `.trim();
 }
+
 
 /* ===================== 검색 ===================== */
 function search(){
