@@ -206,10 +206,10 @@
       <div class="card-inner">
 
         <div class="title">
-          <div>발주 조회 + 재고 경고</div>
+          <div> 출고 </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a class="pill" id="orderLink" href="#" target="_blank" rel="noopener noreferrer">발주서 열기</a>
-            <a class="pill" id="stockLink" href="#" target="_blank" rel="noopener noreferrer">재고시트 열기</a>
+            <a class="pill" id="orderLink" href="#" target="_blank" rel="noopener noreferrer">발주서</a>
+            <a class="pill" id="stockLink" href="#" target="_blank" rel="noopener noreferrer">재고</a>
           </div>
         </div>
 
@@ -250,21 +250,20 @@
 
         <!-- 발주서에서 불러온 후: 상품 변경 -->
         <div class="panel" id="changePanel">
-          <span class="label">상품 변경(여러건이면 체크한 행만 적용)</span>
+          <span class="label">변경</span>
 
           <div class="miniinput">
-            <span style="font-size:11px;opacity:.75;">변경 컬러코드</span>
+            <span style="font-size:11px;opacity:.75;">컬러코드</span>
             <input id="changeColor" type="text" placeholder="예: ABC123 (필수)" />
           </div>
 
           <div class="miniinput" style="width:180px;">
-            <span style="font-size:11px;opacity:.75;">변경 수량</span>
+            <span style="font-size:11px;opacity:.75;">수량</span>
             <input id="changeQty" type="text" placeholder="예: 1" />
           </div>
 
-          <button class="btn" id="btnChangeApply">변경 적용</button>
-          <button class="btn" id="btnChangeReset">변경 취소</button>
-          <span class="minihelp">변경 시 상품명=재고시트(F+I) · 재고/복사차단 재검사</span>
+          <button class="btn" id="btnChangeApply">적용</button>
+          <button class="btn" id="btnChangeReset">취소</button>
         </div>
 
         <div class="table-wrap" id="tableWrap">
@@ -275,7 +274,7 @@
     </div>
   </div>
 
-  <div id="toast">복사됨</div>
+  <div id="toast"> copy </div>
 
 <script>
 /* ===================== 기준 ===================== */
