@@ -709,6 +709,28 @@ function buildTSV(outRows){
   });
   return lines.join("\n");
 }
+function buildHTMLTable(outRows){
+  const thStyle = "border:1px solid #ddd;padding:6px 8px;text-align:center;vertical-align:middle;font-weight:700;background:#fff;";
+  const tdStyle = "border:1px solid #eee;padding:6px 8px;text-align:center;vertical-align:middle;";
+
+  const thead = `<tr>${
+    TABLE_COLS.map(c => `<th style="${thStyle}">${escapeHtml(c.label)}</th>`).join("")
+  }</tr>`;
+
+  const tbody = outRows.map(o => {
+    const tds = TABLE_COLS.map(c =>
+      `<td style="${tdStyle}">${escapeHtml(String(o[c.key] ?? ""))}</td>`
+    ).join("");
+    return `<tr>${tds}</tr>`;
+  }).join("");
+
+  return `
+    <table style="border-collapse:collapse;">
+      <thead>${thead}</thead>
+      <tbody>${tbody}</tbody>
+    </table>
+  `.trim();
+}
 
 /* ===================== 검색 ===================== */
 function search(){
@@ -838,16 +860,6 @@ function resetChange(){
 }
 
 /* ===================== 이벤트 ===================== */
-$("btnSearch").addEventListener("click", search);
-$("orderInput").addEventListener("keydown", (e)=>{
-  if(e.key === "Enter"){ e.preventDefault(); search(); }
-});
-
-$("btnManualApply").addEventListener("click", applyManual);
-
-$("btnChangeApply").addEventListener("click", applyChange);
-$("btnChangeReset").addEventListener("click", resetChange);
-
 $("btnCopy").addEventListener("click", async ()=>{
   if(!lastOutRows || lastOutRows.length === 0){
     showToast("복사할 결과 없음");
@@ -857,26 +869,29 @@ $("btnCopy").addEventListener("click", async ()=>{
     showToast("재고 경고로 복사 차단됨");
     return;
   }
-  const tsv = buildTSV(lastOutRows);
-const html = buildHTMLTable(lastOutRows);
 
-try{
-  await navigator.clipboard.write([
-    new ClipboardItem({
-      "text/plain": new Blob([tsv], { type: "text/plain" }),
-      "text/html": new Blob([html], { type: "text/html" }),
-    })
-  ]);
-  showToast(`통째로 복사됨 (${lastOutRows.length}건)`);
-}catch(e){
-  // 브라우저에서 HTML 복사 막힌 경우 → 텍스트로 폴백
+  const tsv = buildTSV(lastOutRows);
+  const html = buildHTMLTable(lastOutRows);
+
   try{
-    await navigator.clipboard.writeText(tsv);
-    showToast("복사됨 (서식 제외)");
-  }catch{
-    showToast("복사 실패");
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        "text/plain": new Blob([tsv], { type: "text/plain" }),
+        "text/html": new Blob([html], { type: "text/html" }),
+      })
+    ]);
+    showToast(`통째로 복사됨 (${lastOutRows.length}건)`);
+  }catch(e){
+    // HTML 복사가 막힌 환경이면 텍스트로 폴백
+    try{
+      await navigator.clipboard.writeText(tsv);
+      showToast("복사됨 (서식 제외)");
+    }catch{
+      showToast("복사 실패");
+    }
   }
 });
+
 
 $("btnClear").addEventListener("click", ()=>{
   $("orderInput").value = "";
