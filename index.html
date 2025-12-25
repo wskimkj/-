@@ -15,7 +15,6 @@
       --card:rgba(255,255,255,.9);
       --stroke:rgba(170,150,230,.22);
       --text:#2f2a3a;
-      --pink:#ff8fbc;
       --shadow:0 18px 50px rgba(30,18,60,.10);
       --shadow2:0 10px 26px rgba(30,18,60,.08);
 
@@ -34,7 +33,10 @@
       --ok-bg: rgba(184,167,255,.14);
       --ok-border: rgba(170,150,230,.35);
       --ok-text: rgba(47,42,58,.92);
+
+      --pink:#ff8fbc;
     }
+
     *{box-sizing:border-box;font-family:"Pretendard",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
     body{
       margin:0; min-height:100vh; color:var(--text);
@@ -43,6 +45,7 @@
         radial-gradient(900px 520px at 82% 24%, rgba(184,167,255,.20), transparent 58%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
     }
+
     .container{max-width:1200px;margin:0 auto;padding:28px 16px 46px;}
     .card{
       background:var(--card);
@@ -54,7 +57,7 @@
     .card-inner{padding:18px;}
     .title{
       display:flex; align-items:center; justify-content:space-between; gap:10px;
-      font-size:18px; font-weight:800;
+      font-size:18px; font-weight:900;
     }
     .meta{
       margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;
@@ -87,6 +90,7 @@
       width:100%; border:0; outline:0; background:transparent;
       font-size:13px;
     }
+
     .btn{
       border:0; cursor:pointer;
       padding:10px 14px; border-radius:14px;
@@ -96,12 +100,7 @@
       font-weight:900;
     }
     .btn:hover{border-color: rgba(255,143,188,.55); box-shadow: 0 0 0 3px rgba(255,143,188,.12), var(--shadow2);}
-    .btn:disabled{
-      cursor:not-allowed;
-      opacity:.55;
-      filter:saturate(.8);
-      box-shadow:none;
-    }
+    .btn:disabled{cursor:not-allowed; opacity:.55; filter:saturate(.8); box-shadow:none;}
 
     .badge{
       display:inline-flex; align-items:center; gap:6px;
@@ -116,6 +115,11 @@
     .badge.low{ background: var(--low-bg); border-color: var(--low-border); color: var(--low-text); }
     .badge.out{ background: var(--out-bg); border-color: var(--out-border); color: var(--out-text); }
     .badge.na{ background: var(--na-bg); border-color: var(--na-border); color: var(--na-text); }
+
+    .warnline{font-size:11px; font-weight:900;}
+    .warnline.low{color: var(--low-text);}
+    .warnline.out{color: var(--out-text);}
+    .warnline.na{color: var(--na-text);}
 
     .table-wrap{
       margin-top:14px;
@@ -147,6 +151,41 @@
     tr.na   { background: rgba(120,120,140,.07) !important; }
 
     .copy{cursor:pointer;}
+
+    /* 수동 입력 패널 */
+    .manual{
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px dashed rgba(170,150,230,.35);
+      background: rgba(255,255,255,.65);
+      display:none;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .manual.show{display:flex;}
+    .manual .label{
+      font-size:12px;
+      font-weight:900;
+      color: rgba(47,42,58,.88);
+    }
+    .manual .miniinput{
+      display:flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:12px;
+      background: rgba(243,241,250,.85);
+      border:1px solid rgba(170,150,230,.20);
+      box-shadow: var(--shadow2);
+    }
+    .manual .miniinput input{
+      border:0; outline:0; background:transparent; width:220px; font-size:12.5px;
+    }
+    .manual .minihelp{
+      font-size:11px;
+      color: rgba(110,106,130,.85);
+    }
+
     #toast{
       position:fixed; right:18px; bottom:18px; z-index:9999;
       padding:10px 12px; border-radius:14px;
@@ -158,12 +197,6 @@
       pointer-events:none;
     }
     #toast.show{opacity:1; transform:translateY(0);}
-
-    .mini{font-size:11px;color: rgba(110,106,130,.85);}
-    .warnline{font-size:11px; font-weight:900;}
-    .warnline.low{color: var(--low-text);}
-    .warnline.out{color: var(--out-text);}
-    .warnline.na{color: var(--na-text);}
   </style>
 </head>
 
@@ -182,7 +215,7 @@
 
         <div class="meta">
           <span id="status">데이터 로딩 중…</span>
-          <span class="mini" id="stat2"></span>
+          <span id="stat2"></span>
           <span id="stockSummary"></span>
           <span id="copyGateMsg"></span>
         </div>
@@ -195,6 +228,24 @@
           <button class="btn" id="btnSearch">조회</button>
           <button class="btn" id="btnCopy" disabled>복사</button>
           <button class="btn" id="btnClear">초기화</button>
+        </div>
+
+        <!-- ✅ 발주서에 주문번호 없을 때: 수동 입력 -->
+        <div class="manual" id="manualPanel">
+          <span class="label">발주서에 없음 → 수동 입력</span>
+
+          <div class="miniinput">
+            <span style="font-size:11px;opacity:.75;">상품컬러코드</span>
+            <input id="manualColor" type="text" placeholder="예: ABC123 (필수)" />
+          </div>
+
+          <div class="miniinput" style="width:180px;">
+            <span style="font-size:11px;opacity:.75;">수량</span>
+            <input id="manualQty" type="text" placeholder="예: 1" />
+          </div>
+
+          <button class="btn" id="btnManualApply">적용</button>
+          <span class="minihelp">재고 5 미만/0/미등록이면 복사 차단</span>
         </div>
 
         <div class="table-wrap" id="tableWrap">
@@ -238,7 +289,7 @@ const OUTPUT_HEADERS = [
 ];
 
 /**
- * ✅ 매칭 키: 발주서 C열 "쇼핑몰 주문번호(필수)"
+ * ✅ 매칭 키: 발주서 C열
  * CSV row는 0-based: A=0, B=1, C=2
  */
 const MATCH_COL_INDEX = 2;
@@ -265,9 +316,7 @@ async function fetchText(url, timeoutMs = 9000){
   }
 }
 
-function normalizeKey(v){
-  return String(v ?? "").trim();
-}
+function normalizeKey(v){ return String(v ?? "").trim(); }
 
 function normColorCode(v){
   return normalizeKey(v).replace(/\s+/g,"").replace(/-/g,"").toUpperCase();
@@ -291,16 +340,21 @@ function escapeHtml(str){
 let orderHeader = [];
 let orderRows = [];
 let headerIndexMap = new Map();
-let orderIndexMap = new Map(); // 주문번호 -> [row,row,...]
-let stockMap = new Map();      // 컬러코드 -> 재고수량(number)
-let lastResultRows = [];       // 복사용 캐시
+let orderIndexMap = new Map();   // 주문번호 -> [row,row,...]
+let stockMap = new Map();        // 컬러코드 -> 재고수량(number)
+
+// ✅ 결과 캐시(통째 복사/표시용): "출력 오브젝트" 배열로 통일
+// outRows: [{...OUTPUT_HEADERS 값...}, ...]
+let lastOutRows = [];
+let lastStockTypes = []; // 각 행의 stock type 저장 (ok/low/out/na)
 
 /* ===================== Load Both CSV ===================== */
 async function loadAll(){
   $("status").textContent = "데이터 로딩 중… (발주서/재고)";
   $("stat2").textContent = "";
-  $("stockSummary").textContent = "";
-  $("copyGateMsg").textContent = "";
+  clearStockUI();
+  setManualMode(false);
+
   $("btnCopy").disabled = true;
 
   try{
@@ -320,7 +374,6 @@ async function loadAll(){
           headerIndexMap = new Map();
           orderHeader.forEach((h, idx)=>{ if(h) headerIndexMap.set(h, idx); });
 
-          // ✅ 속도 개선: 주문번호 -> 행 배열 Map
           orderIndexMap = new Map();
           for(const r of orderRows){
             const k = normalizeKey(r[MATCH_COL_INDEX]);
@@ -374,218 +427,38 @@ function stockStatusByColorCode(colorCodeRaw){
   return { type:"ok", label:`재고 ${qty}`, qty };
 }
 
-/* ===================== Render ===================== */
-function safeGet(row, idx){
-  if(!row || idx == null || idx < 0) return "";
-  return (row[idx] ?? "");
+function badgeHtml(type, text){
+  const cls = type === "ok" ? "badge ok"
+            : type === "low" ? "badge low"
+            : type === "out" ? "badge out"
+            : "badge na";
+  return `<span class="${cls}">${escapeHtml(text)}</span>`;
 }
 
-/**
- * ✅ 화면 표시용 오버라이드
- * - 배송수단: 항상 "택배"
- * - 운송장 번호: 항상 빈칸
- */
-function buildOutRow(row){
-  const obj = {};
-  for(const h of OUTPUT_HEADERS){
-    if(h === "배송수단"){ obj[h] = "택배"; continue; }
-    if(h === "운송장 번호"){ obj[h] = ""; continue; }
-    const idx = headerIndexMap.get(h);
-    obj[h] = safeGet(row, idx);
-  }
-  return obj;
+/* ===================== UI Helpers ===================== */
+function clearStockUI(){
+  $("stockSummary").textContent = "";
+  $("copyGateMsg").textContent = "";
+  $("copyGateMsg").className = "";
 }
 
-function renderStockSummaryAndGate(rows){
-  const el = $("stockSummary");
-  const gate = $("copyGateMsg");
-  const btnCopy = $("btnCopy");
+function setManualMode(on){
+  const panel = $("manualPanel");
+  panel.classList.toggle("show", !!on);
+}
 
-  el.textContent = "";
-  gate.textContent = "";
-  gate.className = "";
-
-  // 결과 없으면 복사 막기
-  if(!rows || rows.length === 0){
-    btnCopy.disabled = true;
-    return;
-  }
-
-  const ccIdx = headerIndexMap.get("상품컬러코드");
+function gateCopyByTypes(types){
+  // types 배열 중 하나라도 ok 아닌게 있으면 차단
   let ok=0, low=0, out=0, na=0;
-
-  // 행별 재고 상태 집계
-  for(const r of rows){
-    const st = stockStatusByColorCode(safeGet(r, ccIdx));
-    if(st.type === "ok") ok++;
-    else if(st.type === "low") low++;
-    else if(st.type === "out") out++;
+  for(const t of types){
+    if(t === "ok") ok++;
+    else if(t === "low") low++;
+    else if(t === "out") out++;
     else na++;
   }
 
-  // 배지 표시
   const badges = [];
-  if(out) badges.push(`<span class="badge out">OUT ${out}건</span>`);
-  if(low) badges.push(`<span class="badge low">LOW ${low}건</span>`);
-  if(na)  badges.push(`<span class="badge na">N/A ${na}건</span>`);
-  if(!out && !low && !na) badges.push(`<span class="badge ok">OK ${ok}건</span>`);
-
-  el.innerHTML = badges.join(" ");
-
-  // ✅ 실수 방지: OUT/LOW/N/A 하나라도 있으면 복사 차단
-  const blocked = (out > 0 || low > 0 || na > 0);
-  btnCopy.disabled = blocked;
-
-  if(blocked){
-    if(out > 0){
-      gate.innerHTML = `출고요청 방지: <strong>재고 0(OUT)</strong> 포함`;
-      gate.className = "warnline out";
-    }else if(low > 0){
-      gate.innerHTML = `출고요청 방지: <strong>재고 ${LOW_STOCK_THRESHOLD} 미만(LOW)</strong> 포함`;
-      gate.className = "warnline low";
-    }else{
-      gate.innerHTML = `출고요청 방지: <strong>재고 미등록(N/A)</strong> 포함`;
-      gate.className = "warnline na";
-    }
-  }else{
-    gate.innerHTML = `<span class="warnline" style="color:rgba(47,42,58,.85)">복사 가능</span>`;
-    gate.className = "warnline";
-  }
-}
-
-function renderList(rows){
-  const wrap = $("tableWrap");
-  lastResultRows = rows || [];
-
-  renderStockSummaryAndGate(rows);
-
-  if(!rows || rows.length === 0){
-    wrap.innerHTML = `<div class="no-data">해당 주문번호를 찾지 못했습니다.</div>`;
-    return;
-  }
-
-  const ccIdx = headerIndexMap.get("상품컬러코드");
-
-  let html = `<table>
-    <thead>
-      <tr>
-        <th style="min-width:48px;">#</th>
-        ${OUTPUT_HEADERS.map(h=>`<th style="min-width:140px;">${escapeHtml(h)}</th>`).join("")}
-      </tr>
-    </thead>
-    <tbody>`;
-
-  rows.forEach((r, i)=>{
-    const out = buildOutRow(r);
-    const status = stockStatusByColorCode(safeGet(r, ccIdx));
-
-    const trClass = (status.type === "low") ? "low" :
-                    (status.type === "out") ? "out" :
-                    (status.type === "na")  ? "na" : "";
-
-    html += `<tr class="${trClass}">
-      <td class="copy" data-copy="${i+1}">${i+1}</td>
-      ${OUTPUT_HEADERS.map(h=>{
-        const v = out[h] ?? "";
-        return `<td class="copy" data-copy="${escapeHtml(String(v).trim())}">${escapeHtml(String(v))}</td>`;
-      }).join("")}
-    </tr>`;
-  });
-
-  html += `</tbody></table>`;
-  wrap.innerHTML = html;
-
-  // 셀 단위 클릭 복사
-  wrap.querySelectorAll(".copy").forEach(td=>{
-    td.addEventListener("click", async ()=>{
-      const text = (td.getAttribute("data-copy") || td.textContent || "").trim();
-      try{
-        await navigator.clipboard.writeText(text);
-        showToast("복사됨");
-      }catch{
-        showToast("복사 실패");
-      }
-    });
-  });
-}
-
-/* ===================== 통째 복사 (TSV) ===================== */
-function buildTSVFromRows(rows){
-  const INCLUDE_HEADER_ROW = false;
-  const lines = [];
-
-  if(INCLUDE_HEADER_ROW){
-    lines.push([...OUTPUT_HEADERS].join("\t"));
-  }
-
-  rows.forEach((r)=>{
-    const out = buildOutRow(r);
-    const rowValues = OUTPUT_HEADERS.map(h => String(out[h] ?? ""));
-    const sanitized = rowValues.map(v => v.replace(/\t/g, " ").replace(/\r?\n/g, " "));
-    lines.push(sanitized.join("\t"));
-  });
-
-  return lines.join("\n");
-}
-
-/* ===================== Search ===================== */
-function search(){
-  const orderNo = normalizeKey($("orderInput").value);
-  if(!orderNo){
-    $("tableWrap").innerHTML = `<div class="no-data">주문번호를 입력해주세요.</div>`;
-    lastResultRows = [];
-    $("btnCopy").disabled = true;
-    $("stockSummary").textContent = "";
-    $("copyGateMsg").textContent = "";
-    return;
-  }
-
-  const rows = orderIndexMap.get(orderNo) || [];
-  $("status").textContent = rows.length
-    ? `검색 결과: ${rows.length.toLocaleString()}건`
-    : "검색 결과 없음";
-
-  renderList(rows);
-}
-
-/* ===================== Events ===================== */
-$("btnSearch").addEventListener("click", search);
-
-$("btnCopy").addEventListener("click", async ()=>{
-  if(!lastResultRows || lastResultRows.length === 0){
-    showToast("복사할 결과 없음");
-    return;
-  }
-  if($("btnCopy").disabled){
-    showToast("재고 경고로 복사 차단됨");
-    return;
-  }
-  const tsv = buildTSVFromRows(lastResultRows);
-  try{
-    await navigator.clipboard.writeText(tsv);
-    showToast(`통째로 복사됨 (${lastResultRows.length}건)`);
-  }catch(e){
-    console.error(e);
-    showToast("복사 실패");
-  }
-});
-
-$("btnClear").addEventListener("click", ()=>{
-  $("orderInput").value = "";
-  $("status").textContent = "초기화됨";
-  $("tableWrap").innerHTML = `<div class="no-data">검색 결과가 없습니다.</div>`;
-  $("stockSummary").textContent = "";
-  $("copyGateMsg").textContent = "";
-  lastResultRows = [];
-  $("btnCopy").disabled = true;
-});
-
-$("orderInput").addEventListener("keydown", (e)=>{
-  if(e.key === "Enter"){ e.preventDefault(); search(); }
-});
-
-/* ===================== Boot ===================== */
-loadAll();
-</script>
-</body>
-</html>
+  if(out) badges.push(badgeHtml("out", `OUT ${out}건`));
+  if(low) badges.push(badgeHtml("low", `LOW ${low}건`));
+  if(na)  badges.push(badgeHtml("na", `N/A ${na}건`));
+  if(!out && !low && !n
