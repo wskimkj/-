@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title> 출고 </title>
+  <title> Shipment </title>
 
   <link rel="stylesheet" as="style" crossorigin
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -45,8 +45,16 @@
         radial-gradient(900px 520px at 82% 24%, rgba(184,167,255,.20), transparent 58%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
     }
+    .field-label{
+  font-size:12px;
+  opacity:.75;
+  white-space:nowrap;   /* 줄바꿈 방지 */
+  min-width:52px;       /* 라벨 폭(원하는 값으로) */
+  flex:0 0 auto;
+}
 
-    .container{max-width:1200px;margin:0 auto;padding:28px 16px 46px;}
+
+    .container{max-width:1400px;margin:0 auto;padding:28px 16px 46px;}
     .card{
       background:var(--card);
       border:1px solid var(--stroke);
@@ -210,6 +218,7 @@
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <a class="pill" id="orderLink" href="#" target="_blank" rel="noopener noreferrer">발주서</a>
             <a class="pill" id="stockLink" href="#" target="_blank" rel="noopener noreferrer">재고</a>
+            <a class="pill" id="existLink" href="#" target="_blank" rel="noopener noreferrer">목적/처리</a>
           </div>
         </div>
 
@@ -220,10 +229,35 @@
           <span id="copyGateMsg"></span>
         </div>
 
+        <!-- ✅ 기존 데이터(목적/전산 처리 방법) 토글 패널 -->
+        <div class="panel" id="existPanel" style="display:none;">
+          <span class="label">기존 등록 데이터</span>
+          <button class="btn" id="btnExistToggle" type="button">펼치기</button>
+
+          <div id="existBody" style="display:none; width:100%;">
+            <div class="table-wrap" style="max-height:240px; width:100%; margin-top:8px;">
+              <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:12px;">
+                <thead>
+                  <tr>
+                    <th>사방넷주문번호</th>
+                    <th>쇼핑몰 주문번호</th>
+                    <th>목적(D)</th>
+                    <th>전산 처리 방법(E)</th>
+                    <th>기록일(있으면)</th>
+                  </tr>
+                </thead>
+                <tbody id="existTbody"></tbody>
+              </table>
+            </div>
+            <div class="minihelp" style="margin-top:8px;">
+              ※ 이 주문번호로 이미 입력된 목적/전산 처리 방법이 있으면 여기서 확인됩니다.
+            </div>
+          </div>
+        </div>
+
         <div class="row">
           <div class="input">
-            <span style="font-size:12px;opacity:.75;">주문번호</span>
-            <input id="orderInput" type="text" placeholder="쇼핑몰 주문번호(필수)(발주서 C열) 입력 후 Enter" />
+            <span class="field-label">주문번호</span>
           </div>
           <button class="btn" id="btnSearch">조회</button>
           <button class="btn" id="btnCopy" disabled>복사</button>
@@ -302,8 +336,17 @@ const STOCK_CSV_URL = withCacheBust(
   "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/export?format=csv&gid=366983013"
 );
 
+// ✅ 목적/전산 처리 방법 시트
+const EXIST_SHEET_URL_VIEW =
+  "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/edit?gid=0#gid=0";
+
+const EXIST_CSV_URL = withCacheBust(
+  "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/export?format=csv&gid=0"
+);
+
 document.getElementById("orderLink").href = ORDER_SHEET_URL_VIEW;
 document.getElementById("stockLink").href = STOCK_SHEET_URL_VIEW;
+document.getElementById("existLink").href = EXIST_SHEET_URL_VIEW;
 
 /* ===================== 강제 포함 B/C/D ===================== */
 // CSV 0-based: A=0, B=1, C=2, D=3
@@ -332,21 +375,17 @@ const TABLE_COLS = [
     .map(h => ({ key:h, label:h }))
 ];
 
-  const COL_WIDTH = {
+const COL_WIDTH = {
   "요청일": 100,
-
   "사방넷주문번호": 100,
   "쇼핑몰 주문번호(필수)": 120,
   "상품명": 300,
   "바코드": 120,
-     "상품코드": 120,
-     "상품컬러코드": 120,
-        "  옵션": 120,
-
-  // 기본(그 외 컬럼)
+  "상품코드": 120,
+  "상품컬러코드": 120,
+  "  옵션": 120,
   "_default": 80
 };
-
 
 /* ===================== 유틸 ===================== */
 const $ = (id)=>document.getElementById(id);
@@ -377,8 +416,7 @@ function normalizeKey(v){
     .trim();
 }
 
-// ✅ 주문번호는 열 이동/캐시가 더 흔한 원인이지만,
-// 혹시 모를 숨은 문자도 같이 제거
+// ✅ 주문번호도 숨은 문자 제거
 function normalizeOrderNo(v){
   return normalizeKey(v);
 }
@@ -408,15 +446,12 @@ function safeGet(row, idx){
 
 /* ===================== 매칭 컬럼: 헤더로 찾기 ===================== */
 function getMatchIndexFromHeader_(){
-  // 발주서 헤더명과 정확히 동일해야 함
   const idx = headerIndexMap.get("쇼핑몰 주문번호(필수)");
-  // 혹시 헤더가 살짝 바뀐 케이스 대비
   if(idx == null){
     const idx2 = headerIndexMap.get("쇼핑몰 주문번호");
     if(idx2 != null) return idx2;
   }
-  // 최후 fallback (기존 C열)
-  return 2;
+  return 2; // fallback
 }
 
 /* ===================== 재고/상품명 유틸 ===================== */
@@ -436,6 +471,12 @@ let orderIndexMap = new Map();
 let stockMap = new Map();
 let stockInfoMap = new Map();
 
+// ✅ 목적/전산 처리 방법(기존등록) 시트
+let existRows = [];
+let existHeaderMap = new Map();
+let existIndexBySabang = new Map(); // key: 사방넷주문번호 -> rows[]
+let existIndexByMall = new Map();   // key: 쇼핑몰주문번호 -> rows[]
+
 // 상태
 let lastOutRows = [];
 let lastStockTypes = [];
@@ -444,17 +485,19 @@ let lastSource = "none";
 
 /* ===================== 로드 ===================== */
 async function loadAll(){
-  $("status").textContent = "데이터 로딩 중… (발주서/재고)";
+  $("status").textContent = "데이터 로딩 중… (발주서/재고/목적/처리)";
   $("stat2").textContent = "";
   clearStockUI();
+  hideExistPanel();
   setPanel("manual", false);
   setPanel("change", false);
   $("btnCopy").disabled = true;
 
   try{
-    const [orderCsv, stockCsv] = await Promise.all([
+    const [orderCsv, stockCsv, existCsv] = await Promise.all([
       fetchText(ORDER_CSV_URL),
-      fetchText(STOCK_CSV_URL)
+      fetchText(STOCK_CSV_URL),
+      fetchText(EXIST_CSV_URL)
     ]);
 
     // 발주서 파싱(헤더 포함)
@@ -469,7 +512,6 @@ async function loadAll(){
 
           orderRows = rows.slice(1).filter(r => r && r.length > 1);
 
-          // ✅ 매칭 컬럼 인덱스(헤더로 찾기)
           const matchIdx = getMatchIndexFromHeader_();
 
           orderIndexMap = new Map();
@@ -480,13 +522,8 @@ async function loadAll(){
             orderIndexMap.get(k).push(r);
           }
 
-          // ✅ 디버그 로그
-          console.log("[LOAD] header sample:", header.slice(0, 10));
-          console.log("[LOAD] matchIdx:", matchIdx, "headerName:", header[matchIdx]);
-          console.log("[LOAD] C(2) sample:", orderRows.slice(0,5).map(r => r[2]));
-          console.log("[LOAD] matchCol sample:", orderRows.slice(0,5).map(r => r[matchIdx]));
+          console.log("[LOAD] order matchIdx:", matchIdx, "headerName:", header[matchIdx]);
           console.log("[LOAD] orderRows:", orderRows.length, "orderIndexMap keys:", orderIndexMap.size);
-
           resolve();
         }
       });
@@ -517,9 +554,56 @@ async function loadAll(){
       });
     });
 
+    // ✅ 기존등록(목적/전산 처리 방법) 파싱
+    await new Promise((resolve)=>{
+      Papa.parse(existCsv, {
+        complete: (results)=>{
+          const rows = results.data || [];
+          const header = (rows[0] || []).map(h => normalizeKey(h));
+
+          existHeaderMap = new Map();
+          header.forEach((h, idx)=>{ if(h) existHeaderMap.set(h, idx); });
+
+          existRows = rows.slice(1).filter(r => r && r.length > 1);
+
+          existIndexBySabang = new Map();
+          existIndexByMall = new Map();
+
+          const sabangIdx =
+            existHeaderMap.get("사방넷주문번호") ??
+            existHeaderMap.get("사방넷 주문번호") ??
+            null;
+
+          const mallIdx =
+            existHeaderMap.get("쇼핑몰 주문번호(필수)") ??
+            existHeaderMap.get("쇼핑몰 주문번호") ??
+            null;
+
+          for(const r of existRows){
+            const sabang = normalizeKey(safeGet(r, sabangIdx));
+            const mall = normalizeOrderNo(safeGet(r, mallIdx));
+
+            if(sabang){
+              if(!existIndexBySabang.has(sabang)) existIndexBySabang.set(sabang, []);
+              existIndexBySabang.get(sabang).push(r);
+            }
+            if(mall){
+              if(!existIndexByMall.has(mall)) existIndexByMall.set(mall, []);
+              existIndexByMall.get(mall).push(r);
+            }
+          }
+
+          console.log("[LOAD] existRows:", existRows.length,
+                      "existIndexBySabang:", existIndexBySabang.size,
+                      "existIndexByMall:", existIndexByMall.size);
+          resolve();
+        }
+      });
+    });
+
     $("status").textContent = "로딩 완료";
     $("stat2").textContent =
-      `발주 ${orderRows.length.toLocaleString()}건 · 주문번호 키 ${orderIndexMap.size.toLocaleString()}개 · 재고코드 ${stockMap.size.toLocaleString()}개`;
+      `발주 ${orderRows.length.toLocaleString()}건 · 주문번호 키 ${orderIndexMap.size.toLocaleString()}개 · 재고코드 ${stockMap.size.toLocaleString()}개 · 목적/처리 ${existRows.length.toLocaleString()}행`;
   }catch(e){
     console.error(e);
     $("status").textContent = "로드 실패: 시트가 '보기 가능' 공개인지 확인하세요.";
@@ -627,6 +711,91 @@ function gateCopyByTypes(types){
   }
 }
 
+/* ===================== 기존 데이터(목적/처리) 토글 ===================== */
+function hideExistPanel(){
+  const p = $("existPanel");
+  if(!p) return;
+  p.style.display = "none";
+  $("existBody").style.display = "none";
+  $("btnExistToggle").textContent = "펼치기";
+  $("existTbody").innerHTML = "";
+}
+
+function showExistPanelByOrderNo_(orderNo){
+  const keyMall = normalizeOrderNo(orderNo);
+
+  // 1) 쇼핑몰 주문번호로 직접 매칭
+  const rowsByMall = existIndexByMall.get(keyMall) || [];
+
+  // 2) 발주서 결과에서 사방넷주문번호로도 매칭(가능하면)
+  const sabangKeys = [];
+  if(lastSource === "sheet" && lastOutRows && lastOutRows.length){
+    for(const o of lastOutRows){
+      const v = normalizeKey(o["__B"]);
+      if(v) sabangKeys.push(v);
+    }
+  }
+  const rowsBySabang = sabangKeys.flatMap(k => existIndexBySabang.get(k) || []);
+
+  const merged = [...rowsByMall, ...rowsBySabang];
+
+  // 중복 제거(행 전체 기준)
+  const uniq = [];
+  const seen = new Set();
+  for(const r of merged){
+    const sig = JSON.stringify(r);
+    if(seen.has(sig)) continue;
+    seen.add(sig);
+    uniq.push(r);
+  }
+
+  if(uniq.length === 0){
+    hideExistPanel();
+    return;
+  }
+
+  // 표시
+  const panel = $("existPanel");
+  panel.style.display = "flex";
+  $("existBody").style.display = "none";
+  $("btnExistToggle").textContent = `펼치기 (${uniq.length}건)`;
+
+  // 번호 컬럼은 헤더로 찾고, 목적/처리는 D/E 고정(idx 3/4)
+  const sabangIdx =
+    existHeaderMap.get("사방넷주문번호") ??
+    existHeaderMap.get("사방넷 주문번호") ??
+    null;
+
+  const mallIdx =
+    existHeaderMap.get("쇼핑몰 주문번호(필수)") ??
+    existHeaderMap.get("쇼핑몰 주문번호") ??
+    null;
+
+  const dateIdx =
+    existHeaderMap.get("기록일") ??
+    existHeaderMap.get("등록일") ??
+    existHeaderMap.get("작성일") ??
+    null;
+
+  $("existTbody").innerHTML = uniq.map(r=>{
+    const sabang = safeGet(r, sabangIdx);
+    const mall = safeGet(r, mallIdx);
+    const purpose = safeGet(r, 3); // D
+    const method  = safeGet(r, 4); // E
+    const dt = safeGet(r, dateIdx);
+
+    return `
+      <tr>
+        <td>${escapeHtml(sabang)}</td>
+        <td>${escapeHtml(mall)}</td>
+        <td>${escapeHtml(purpose)}</td>
+        <td>${escapeHtml(method)}</td>
+        <td>${escapeHtml(dt)}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
 /* ===================== out row 생성 ===================== */
 function buildOutFromSheetRow(row){
   const o = {};
@@ -708,10 +877,9 @@ function renderTable(outRows, stockTypes){
         <th style="min-width:48px;">#</th>
         <th style="min-width:64px;">선택</th>
         ${TABLE_COLS.map(c=>{
-  const w = COL_WIDTH[c.label] || COL_WIDTH["_default"];
-  return `<th style="min-width:${w}px; max-width:${w}px;">${escapeHtml(c.label)}</th>`;
-}).join("")}
-
+          const w = COL_WIDTH[c.label] || COL_WIDTH["_default"];
+          return `<th style="min-width:${w}px; max-width:${w}px;">${escapeHtml(c.label)}</th>`;
+        }).join("")}
       </tr>
     </thead>
     <tbody>`;
@@ -727,12 +895,12 @@ function renderTable(outRows, stockTypes){
       </td>
       ${TABLE_COLS.map(c=>{
         const v = o[c.key] ?? "";
-const w = COL_WIDTH[c.label] || COL_WIDTH["_default"];
-return `<td class="copy"
-  style="min-width:${w}px; max-width:${w}px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
-  data-copy="${escapeHtml(String(v).trim())}">
-  ${escapeHtml(String(v))}
-</td>`;
+        const w = COL_WIDTH[c.label] || COL_WIDTH["_default"];
+        return `<td class="copy"
+          style="min-width:${w}px; max-width:${w}px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"
+          data-copy="${escapeHtml(String(v).trim())}">
+          ${escapeHtml(String(v))}
+        </td>`;
       }).join("")}
     </tr>`;
   });
@@ -776,14 +944,12 @@ function buildHTMLTable(outRows){
     return `<tr>${tds}</tr>`;
   }).join("");
 
-  // ✅ thead(헤더) 없이 tbody만 반환
   return `
     <table style="border-collapse:collapse;">
       <tbody>${tbody}</tbody>
     </table>
   `.trim();
 }
-
 
 /* ===================== 검색 ===================== */
 function search(){
@@ -793,6 +959,7 @@ function search(){
   setPanel("change", false);
   $("btnCopy").disabled = true;
   clearStockUI();
+  hideExistPanel();
 
   lastOutRows = [];
   lastStockTypes = [];
@@ -804,7 +971,6 @@ function search(){
     return;
   }
 
-  // ✅ 디버그(매칭이 갑자기 안 될 때 바로 확인)
   console.log("[SEARCH] input:", orderNo, "hasKey?", orderIndexMap.has(orderNo));
 
   const rows = orderIndexMap.get(orderNo) || [];
@@ -813,6 +979,9 @@ function search(){
     : "검색 결과 없음 (수동 입력 가능)";
 
   if(rows.length === 0){
+    // ✅ 발주서에 없어도 기존등록 시트에 있을 수 있으니 먼저 표시
+    showExistPanelByOrderNo_(orderNo);
+
     setPanel("manual", true);
     $("tableWrap").innerHTML =
       `<div class="no-data">발주서에서 주문번호를 찾지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
@@ -825,6 +994,9 @@ function search(){
   lastSource = "sheet";
   originalOutRows = JSON.parse(JSON.stringify(outRows));
   renderTable(outRows, stockTypes);
+
+  // ✅ 발주서 결과가 생긴 뒤(사방넷주문번호 포함 가능) 기존등록 표시
+  showExistPanelByOrderNo_(orderNo);
 
   setPanel("change", true);
   $("changeColor").value = normalizeKey(outRows[0]["상품컬러코드"] || "");
@@ -912,6 +1084,15 @@ function resetChange(){
 }
 
 /* ===================== 이벤트 ===================== */
+$("btnExistToggle").addEventListener("click", ()=>{
+  const body = $("existBody");
+  const isOpen = body.style.display !== "none";
+  body.style.display = isOpen ? "none" : "block";
+
+  // 텍스트는 "펼치기 (n건)" 상태가 있을 수 있어서, 단순히 접기/펼치기로만 갱신
+  $("btnExistToggle").textContent = isOpen ? "펼치기" : "접기";
+});
+
 $("btnCopy").addEventListener("click", async ()=>{
   if(!lastOutRows || lastOutRows.length === 0){
     showToast("복사할 결과 없음");
@@ -953,6 +1134,7 @@ $("btnClear").addEventListener("click", ()=>{
   $("status").textContent = "초기화됨";
   $("tableWrap").innerHTML = `<div class="no-data">검색 결과가 없습니다.</div>`;
   clearStockUI();
+  hideExistPanel();
   setPanel("manual", false);
   setPanel("change", false);
   $("btnCopy").disabled = true;
