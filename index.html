@@ -211,6 +211,158 @@
       pointer-events:none;
     }
     #toast.show{opacity:1; transform:translateY(0);}
+
+    /* ===================== UX 업그레이드 ===================== */
+
+/* 버튼/입력 포커스 통일 */
+.input:focus-within,
+.miniinput:focus-within{
+  border-color: rgba(255,143,188,.55);
+  box-shadow: 0 0 0 3px rgba(255,143,188,.12), var(--shadow2);
+}
+
+/* 상단 스티키 바 느낌 */
+.card-inner{
+  position: relative;
+}
+
+/* 상태/배지 영역 정리 */
+.meta{
+  line-height: 1.2;
+}
+#status{
+  font-weight: 900;
+}
+#stat2{
+  opacity:.75;
+}
+#copyGateMsg{
+  padding:4px 8px;
+  border-radius:999px;
+  background: rgba(255,255,255,.55);
+  border:1px solid rgba(170,150,230,.18);
+}
+
+/* 테이블: 더 깔끔하게 */
+.table-wrap{
+  scrollbar-gutter: stable;
+}
+tbody td{
+  white-space: nowrap;
+}
+td.copy{
+  user-select: none;
+}
+
+/* 행 강조: 체크된 행 하이라이트 */
+tr.is-selected{
+  outline: 2px solid rgba(255,143,188,.45);
+  outline-offset: -2px;
+  background: linear-gradient(90deg, rgba(255,143,188,.22), rgba(184,167,255,.18)) !important;
+}
+
+/* 변경 패널: 더 “툴” 같은 느낌 */
+#changePanel{
+  position: sticky;
+  bottom: 10px;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+}
+#changePanel.show{
+  box-shadow: 0 18px 50px rgba(30,18,60,.12);
+}
+
+/* 선택/복사 툴바(상단) */
+.toolbar{
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(170,150,230,.18);
+  background: rgba(255,255,255,.65);
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.toolbar .hint{
+  font-size:11px;
+  opacity:.75;
+}
+.kbd{
+  font-size:11px;
+  border:1px solid rgba(170,150,230,.25);
+  padding:2px 6px;
+  border-radius:8px;
+  background: rgba(255,255,255,.70);
+  font-weight:900;
+}
+
+/* 검색 로딩 스피너 */
+.spinner{
+  width:14px; height:14px;
+  border-radius:50%;
+  border:2px solid rgba(170,150,230,.25);
+  border-top-color: rgba(255,143,188,.85);
+  display:inline-block;
+  animation: spin .8s linear infinite;
+  vertical-align:-2px;
+}
+@keyframes spin{
+  to{ transform: rotate(360deg); }
+}
+
+/* 토스트 더 예쁘게 */
+#toast{
+  font-weight: 900;
+}
+
+    function setLoadingUI_(on, msg){
+  const st = $("status");
+  if(!st) return;
+  if(on){
+    st.innerHTML = `<span class="spinner"></span> ${escapeHtml(msg || "로딩 중…")}`;
+  }else{
+    st.textContent = msg || "로딩 완료";
+  }
+}
+
+function updateToolbar_(){
+  const tb = $("tableToolbar");
+  if(!tb) return;
+
+  const hasRows = lastOutRows && lastOutRows.length > 0;
+  tb.style.display = hasRows ? "flex" : "none";
+
+  const showBulk = hasRows && lastOutRows.length > 1;
+  $("btnSelectAll").style.display = showBulk ? "" : "none";
+  $("btnSelectNone").style.display = showBulk ? "" : "none";
+
+  const checked = getCheckedIndexes_().length;
+  const selBadge = $("selCount");
+  if(selBadge){
+    selBadge.style.display = showBulk ? "" : "none";
+    selBadge.textContent = `선택 ${checked}건`;
+    selBadge.className = checked ? "badge ok" : "badge na";
+  }
+}
+
+/* 전체 선택/해제 */
+$("btnSelectAll")?.addEventListener("click", ()=>{
+  const wrap = $("tableWrap");
+  wrap.querySelectorAll("input.rowChk").forEach(c => c.checked = true);
+  wrap.querySelectorAll("tbody tr").forEach(tr => tr.classList.add("is-selected"));
+  refreshColorDropdownByCurrentRows_();
+  updateToolbar_();
+});
+$("btnSelectNone")?.addEventListener("click", ()=>{
+  const wrap = $("tableWrap");
+  wrap.querySelectorAll("input.rowChk").forEach(c => c.checked = false);
+  wrap.querySelectorAll("tbody tr").forEach(tr => tr.classList.remove("is-selected"));
+  refreshColorDropdownByCurrentRows_();
+  updateToolbar_();
+});
+
+
   </style>
 </head>
 
@@ -241,6 +393,15 @@
           <button class="btn" id="btnExistToggle" type="button">펼치기</button>
 
           <div id="existBody" style="display:none; width:100%;">
+            <div class="toolbar" id="tableToolbar" style="display:none;">
+  <span class="hint">
+    행 클릭하면 복사 · 여러 건이면 체크 후 <span class="kbd">변경</span> 적용
+  </span>
+  <span id="selCount" class="badge ok" style="display:none;">선택 0건</span>
+  <button class="btn" id="btnSelectAll" type="button" style="display:none;">전체 선택</button>
+  <button class="btn" id="btnSelectNone" type="button" style="display:none;">선택 해제</button>
+</div>
+
             <div class="table-wrap" style="max-height:240px; width:100%; margin-top:8px;">
               <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:12px;">
                 <thead>
@@ -1147,10 +1308,19 @@ function renderTable(outRows, stockTypes){
   // ✅ 드롭다운: 현재 rows(체크 포함) 기준으로 필터 갱신
   refreshColorDropdownByCurrentRows_();
   wrap.querySelectorAll("input.rowChk").forEach(chk=>{
-    chk.addEventListener("change", ()=>{
-      refreshColorDropdownByCurrentRows_();
-    });
+  chk.addEventListener("change", ()=>{
+    const idx = Number(chk.dataset.idx);
+    const tr = chk.closest("tr");
+    if(tr){
+      tr.classList.toggle("is-selected", chk.checked);
+    }
+    refreshColorDropdownByCurrentRows_();
+    updateToolbar_();
   });
+});
+
+updateToolbar_();
+
 
   wrap.querySelectorAll(".copy").forEach(td=>{
     td.addEventListener("click", async ()=>{
