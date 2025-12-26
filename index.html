@@ -293,10 +293,10 @@
         <div class="panel" id="changePanel">
           <span class="label">변경</span>
 
-          <!-- ✅ 색상명(I열)만 드롭다운에 표시 + 재고 선택 방지(disabled) -->
+          <!-- ✅ 색상명(I열)만 표시 / LOW·OUT·N/A는 보이지만 선택 불가 -->
           <div class="miniinput">
             <span style="font-size:11px;opacity:.75;">색상 선택</span>
-            <select id="changeColorSelect" title="색상명(I열)로 선택하면 컬러코드가 자동 입력됩니다. (재고 0/LOW/N/A는 선택 불가)">
+            <select id="changeColorSelect" title="색상명(I열)로 선택하면 컬러코드가 자동 입력됩니다. (LOW/OUT/N/A는 선택 불가)">
               <option value="">선택하세요</option>
             </select>
           </div>
@@ -371,15 +371,8 @@ const OUTPUT_HEADERS = [
 
 /* ===================== 결과 테이블 컬럼(화면 숨김 + 복사 전체 포함) ===================== */
 const HIDE_IN_VIEW = new Set([
-  "배송수단",
-  "운송장 번호",
-  "받는분연락처",
-  "받는분 기타연락처",
-  "주소",
-  "배송메세지",
-  "큐텐(한글상품명)",
-  "큐텐바코드",
-  "쇼핑몰(참고용)",
+  "배송수단","운송장 번호","받는분연락처","받는분 기타연락처","주소","배송메세지",
+  "큐텐(한글상품명)","큐텐바코드","쇼핑몰(참고용)",
 ]);
 
 const TABLE_COLS_COPY = [
@@ -463,6 +456,10 @@ function normalizeOrderNo(v){
 
 function normColorCode(v){
   return normalizeKey(v).replace(/\s+/g,"").replace(/-/g,"").toUpperCase();
+}
+
+function normProductCode_(v){
+  return normalizeKey(v).replace(/\s+/g,"").toUpperCase();
 }
 
 function toNumber(v){
@@ -560,19 +557,37 @@ function badgeHtml(type, text){
   return `<span class="${cls}">${escapeHtml(text)}</span>`;
 }
 
-/* ===================== ✅ 색상 드롭다운 (I열만 표시 + 재고 선택 방지) ===================== */
+/* ===================== ✅ 색상 드롭다운 (상품코드 기준 필터 + I열만 표시 + 재고 선택 방지) ===================== */
 /*
-  요구사항:
   - 옵션 텍스트: 색상명(I열)만
-  - OUT/LOW/N/A는 드롭박스에 "보이긴" 하지만 선택 불가(disabled)
+  - LOW/OUT/N/A는 드롭박스에 보이지만 선택 불가(disabled)
+  - "상품코드" 기준으로 해당되는 색상만 노출
+    ✅ 구현 방식: 재고의 컬러코드(A열)가 "상품코드"로 시작(prefix)한다고 가정하여 필터링
 */
 let colorSelectWired = false;
+
+function getAllowedProductCodesForDropdown_(){
+  if(!lastOutRows || lastOutRows.length === 0) return new Set();
+
+  // 여러 건이면 체크된 행 기준, 없으면 첫 행 기준
+  let idxs = [];
+  if(lastOutRows.length > 1){
+    idxs = getCheckedIndexes_();
+  }
+  if(!idxs.length) idxs = [0];
+
+  const set = new Set();
+  for(const idx of idxs){
+    const pc = normProductCode_(lastOutRows[idx]?.["상품코드"]);
+    if(pc) set.add(pc);
+  }
+  return set;
+}
 
 function rebuildColorSelectOptions_(allowedProductCodes){
   const sel = $("changeColorSelect");
   if(!sel) return;
 
-  // allowedProductCodes: Set(정규화된 상품코드들) 또는 null/undefined면 전체
   const allowAll = !allowedProductCodes || allowedProductCodes.size === 0;
 
   sel.innerHTML = `<option value="">선택하세요</option>`;
@@ -582,23 +597,15 @@ function rebuildColorSelectOptions_(allowedProductCodes){
     const color = (info?.colorName || "").trim(); // I열(색상명)
     const label = color || "(색상명 없음)";
 
-    // ✅ 상품코드 필터링
-    // 1) stockInfoMap에 productCode가 있으면 그걸로 매칭
-    // 2) 없으면 "컬러코드가 상품코드로 시작하는지"로 추정 매칭(현실적으로 가장 많이 씀)
+    // ✅ 상품코드 필터링: 컬러코드 prefix로 판단
     let isAllowed = true;
     if(!allowAll){
-      const stockProd = normalizeKey(info?.productCode || "").replace(/\s+/g,"").toUpperCase();
-      if(stockProd){
-        isAllowed = allowedProductCodes.has(stockProd);
-      }else{
-        // fallback: 컬러코드(prefix)로 상품코드 포함 여부 판단
-        isAllowed = Array.from(allowedProductCodes).some(pc => String(code).startsWith(pc));
-      }
+      isAllowed = Array.from(allowedProductCodes).some(pc => String(code).startsWith(pc));
     }
     if(!isAllowed) return;
 
     const st = stockStatusByColorCode(code);
-    items.push({ code, label, type: st.type, qty: (st.qty ?? null) });
+    items.push({ code, label, type: st.type });
   });
 
   items.sort((a,b)=>{
@@ -619,7 +626,7 @@ function rebuildColorSelectOptions_(allowedProductCodes){
 
     opt.textContent = `${it.label}${tag}`;
 
-    // ✅ 선택 불가: low/out/na
+    // ✅ 선택 불가: low/out/na (보이긴 함)
     if(it.type !== "ok") opt.disabled = true;
 
     frag.appendChild(opt);
@@ -627,6 +634,18 @@ function rebuildColorSelectOptions_(allowedProductCodes){
   sel.appendChild(frag);
 }
 
+function refreshColorDropdownByCurrentRows_(){
+  const allowed = getAllowedProductCodesForDropdown_();
+  rebuildColorSelectOptions_(allowed);
+
+  // 현재 changeColor 값이 ok면 select 동기화
+  const sel = $("changeColorSelect");
+  const code = normColorCode($("changeColor")?.value || "");
+  const st = stockStatusByColorCode(code);
+  if(sel){
+    sel.value = (st.type === "ok") ? code : "";
+  }
+}
 
 function wireColorSelect_(){
   if(colorSelectWired) return;
@@ -634,27 +653,23 @@ function wireColorSelect_(){
   const input = $("changeColor");
   if(!sel || !input) return;
 
-  // select → input (disabled는 선택 자체가 안됨)
+  // select → input
   sel.addEventListener("change", ()=>{
     const code = sel.value;
     if(code){
       input.value = code;
-      // 입력 변경에 맞춰 input 이벤트 로직도 한 번 태워주기
       input.dispatchEvent(new Event("input", { bubbles:true }));
     }
   });
 
-  // input → select (사용자가 코드 직접 타이핑해도 select가 따라감)
+  // input → select
   input.addEventListener("input", ()=>{
     const code = normColorCode(input.value);
     const st = stockStatusByColorCode(code);
 
-    // ok면 선택값 세팅 가능
     if(st.type === "ok"){
       sel.value = code;
     }else{
-      // low/out/na는 select에 "disabled option"이라 value 세팅해도 UX가 애매함
-      // → 그냥 placeholder로 돌려둠(사용자가 코드로는 입력할 수 있음)
       sel.value = "";
     }
   });
@@ -863,9 +878,8 @@ async function loadStockOnly(){
       });
       stockLoaded = true;
 
-      // ✅ 드롭다운 옵션(캐시 기준)
-      rebuildColorSelectOptions_(new Set()); // 일단 빈 상태로(placeholder만)
-
+      // 캐시 기준 드롭다운(최초는 전체로 한 번)
+      rebuildColorSelectOptions_();
 
       $("status").textContent = "재고 로딩 완료 (캐시)";
       $("stat2").textContent = `재고 ${stockMap.size.toLocaleString()}개 · 발주/출고는 조회 시 불러옵니다`;
@@ -882,7 +896,7 @@ async function loadStockOnly(){
       });
       stockLoaded = true;
 
-      // ✅ 드롭다운 옵션 최신 재고로 다시 갱신
+      // 최신 재고로 드롭다운 갱신
       rebuildColorSelectOptions_();
 
       $("status").textContent = "재고 로딩 완료";
@@ -922,7 +936,6 @@ function buildStockMapsFromParsed_(results){
 /* ===================== 2) 발주서+출고는 조회 시 1회 Lazy Load ===================== */
 async function ensureOrderAndExistLoaded_(){
   if(orderLoaded && existLoaded) return;
-
   if(orderExistLoadingPromise) return orderExistLoadingPromise;
 
   orderExistLoadingPromise = (async ()=>{
@@ -934,6 +947,7 @@ async function ensureOrderAndExistLoaded_(){
         fetchCsvSmart(EXIST_CSV_BASE),
       ]);
 
+      // 발주서 파싱
       await new Promise((resolve)=>{
         parseCsvWithPapa(orderCsv, (results)=>{
           const rows = results.data || [];
@@ -959,6 +973,7 @@ async function ensureOrderAndExistLoaded_(){
         });
       });
 
+      // 출고(EXIST) 파싱
       await new Promise((resolve)=>{
         parseCsvWithPapa(existCsv, (results)=>{
           const rows = results.data || [];
@@ -1129,12 +1144,14 @@ function renderTable(outRows, stockTypes){
   html += `</tbody></table>`;
   wrap.innerHTML = html;
 
+  // ✅ 드롭다운: 현재 rows(체크 포함) 기준으로 필터 갱신
   refreshColorDropdownByCurrentRows_();
- wrap.querySelectorAll("input.rowChk").forEach(chk=>{
+  wrap.querySelectorAll("input.rowChk").forEach(chk=>{
     chk.addEventListener("change", ()=>{
       refreshColorDropdownByCurrentRows_();
     });
   });
+
   wrap.querySelectorAll(".copy").forEach(td=>{
     td.addEventListener("click", async ()=>{
       const text = (td.getAttribute("data-copy") || td.textContent || "").trim();
@@ -1245,16 +1262,9 @@ async function search(){
   setPanel("change", true);
   $("changeColor").value = normalizeKey(outRows[0]["상품컬러코드"] || "");
   $("changeQty").value = normalizeKey(outRows[0]["수량"] || "");
+
+  // ✅ 패널 열릴 때도 드롭다운 필터 갱신 + 동기화
   refreshColorDropdownByCurrentRows_();
-
-
-  // ✅ 코드 기준으로 드롭다운 동기화(ok면 세팅)
-  const sel = $("changeColorSelect");
-  const code = normColorCode($("changeColor").value);
-  const st = stockStatusByColorCode(code);
-  if(sel){
-    sel.value = (st.type === "ok") ? code : "";
-  }
 }
 
 /* ===================== 수동 입력 ===================== */
@@ -1415,32 +1425,6 @@ $("btnChangeReset").addEventListener("click", resetChange);
 
 /* ===================== 시작 ===================== */
 loadStockOnly(); // ✅ 초기 로딩은 재고만
-
-
-  function normProductCode_(v){
-  return normalizeKey(v).replace(/\s+/g,"").toUpperCase();
-}
-
-function getAllowedProductCodesForDropdown_(){
-  if(!lastOutRows || lastOutRows.length === 0) return new Set();
-
-  // 여러 건이면 체크된 행 기준, 없으면 첫 행 기준
-  let idxs = [];
-  if(lastOutRows.length > 1){
-    idxs = getCheckedIndexes_();
-  }
-  if(!idxs.length) idxs = [0];
-
-  const set = new Set();
-  for(const idx of idxs){
-    const pc = normProductCode_(lastOutRows[idx]?.["상품코드"]);
-    if(pc) set.add(pc);
-  }
-  return set;
-}
-
-
-
 </script>
 </body>
 </html>
