@@ -209,160 +209,108 @@
       opacity:0; transform: translateY(10px);
       transition:.18s ease;
       pointer-events:none;
+      font-weight:900;
     }
     #toast.show{opacity:1; transform:translateY(0);}
 
     /* ===================== UX 업그레이드 ===================== */
 
-/* 버튼/입력 포커스 통일 */
-.input:focus-within,
-.miniinput:focus-within{
-  border-color: rgba(255,143,188,.55);
-  box-shadow: 0 0 0 3px rgba(255,143,188,.12), var(--shadow2);
-}
+    /* 버튼/입력 포커스 통일 */
+    .input:focus-within,
+    .miniinput:focus-within{
+      border-color: rgba(255,143,188,.55);
+      box-shadow: 0 0 0 3px rgba(255,143,188,.12), var(--shadow2);
+    }
 
-/* 상단 스티키 바 느낌 */
-.card-inner{
-  position: relative;
-}
+    /* 상단 스티키 바 느낌 */
+    .card-inner{
+      position: relative;
+    }
 
-/* 상태/배지 영역 정리 */
-.meta{
-  line-height: 1.2;
-}
-#status{
-  font-weight: 900;
-}
-#stat2{
-  opacity:.75;
-}
-#copyGateMsg{
-  padding:4px 8px;
-  border-radius:999px;
-  background: rgba(255,255,255,.55);
-  border:1px solid rgba(170,150,230,.18);
-}
+    /* 상태/배지 영역 정리 */
+    .meta{
+      line-height: 1.2;
+    }
+    #status{
+      font-weight: 900;
+    }
+    #stat2{
+      opacity:.75;
+    }
+    #copyGateMsg{
+      padding:4px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.55);
+      border:1px solid rgba(170,150,230,.18);
+    }
 
-/* 테이블: 더 깔끔하게 */
-.table-wrap{
-  scrollbar-gutter: stable;
-}
-tbody td{
-  white-space: nowrap;
-}
-td.copy{
-  user-select: none;
-}
+    /* 테이블: 더 깔끔하게 */
+    .table-wrap{
+      scrollbar-gutter: stable;
+    }
+    tbody td{
+      white-space: nowrap;
+    }
+    td.copy{
+      user-select: none;
+    }
 
-/* 행 강조: 체크된 행 하이라이트 */
-tr.is-selected{
-  outline: 2px solid rgba(255,143,188,.45);
-  outline-offset: -2px;
-  background: linear-gradient(90deg, rgba(255,143,188,.22), rgba(184,167,255,.18)) !important;
-}
+    /* 행 강조: 체크된 행 하이라이트 */
+    tr.is-selected{
+      outline: 2px solid rgba(255,143,188,.45);
+      outline-offset: -2px;
+      background: linear-gradient(90deg, rgba(255,143,188,.22), rgba(184,167,255,.18)) !important;
+    }
 
-/* 변경 패널: 더 “툴” 같은 느낌 */
-#changePanel{
-  position: sticky;
-  bottom: 10px;
-  z-index: 50;
-  backdrop-filter: blur(10px);
-}
-#changePanel.show{
-  box-shadow: 0 18px 50px rgba(30,18,60,.12);
-}
+    /* 변경 패널: 더 “툴” 같은 느낌 */
+    #changePanel{
+      position: sticky;
+      bottom: 10px;
+      z-index: 50;
+      backdrop-filter: blur(10px);
+    }
+    #changePanel.show{
+      box-shadow: 0 18px 50px rgba(30,18,60,.12);
+    }
 
-/* 선택/복사 툴바(상단) */
-.toolbar{
-  margin-top: 10px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(170,150,230,.18);
-  background: rgba(255,255,255,.65);
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.toolbar .hint{
-  font-size:11px;
-  opacity:.75;
-}
-.kbd{
-  font-size:11px;
-  border:1px solid rgba(170,150,230,.25);
-  padding:2px 6px;
-  border-radius:8px;
-  background: rgba(255,255,255,.70);
-  font-weight:900;
-}
+    /* 선택/복사 툴바(상단) */
+    .toolbar{
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(170,150,230,.18);
+      background: rgba(255,255,255,.65);
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .toolbar .hint{
+      font-size:11px;
+      opacity:.75;
+    }
+    .kbd{
+      font-size:11px;
+      border:1px solid rgba(170,150,230,.25);
+      padding:2px 6px;
+      border-radius:8px;
+      background: rgba(255,255,255,.70);
+      font-weight:900;
+    }
 
-/* 검색 로딩 스피너 */
-.spinner{
-  width:14px; height:14px;
-  border-radius:50%;
-  border:2px solid rgba(170,150,230,.25);
-  border-top-color: rgba(255,143,188,.85);
-  display:inline-block;
-  animation: spin .8s linear infinite;
-  vertical-align:-2px;
-}
-@keyframes spin{
-  to{ transform: rotate(360deg); }
-}
-
-/* 토스트 더 예쁘게 */
-#toast{
-  font-weight: 900;
-}
-
-    function setLoadingUI_(on, msg){
-  const st = $("status");
-  if(!st) return;
-  if(on){
-    st.innerHTML = `<span class="spinner"></span> ${escapeHtml(msg || "로딩 중…")}`;
-  }else{
-    st.textContent = msg || "로딩 완료";
-  }
-}
-
-function updateToolbar_(){
-  const tb = $("tableToolbar");
-  if(!tb) return;
-
-  const hasRows = lastOutRows && lastOutRows.length > 0;
-  tb.style.display = hasRows ? "flex" : "none";
-
-  const showBulk = hasRows && lastOutRows.length > 1;
-  $("btnSelectAll").style.display = showBulk ? "" : "none";
-  $("btnSelectNone").style.display = showBulk ? "" : "none";
-
-  const checked = getCheckedIndexes_().length;
-  const selBadge = $("selCount");
-  if(selBadge){
-    selBadge.style.display = showBulk ? "" : "none";
-    selBadge.textContent = `선택 ${checked}건`;
-    selBadge.className = checked ? "badge ok" : "badge na";
-  }
-}
-
-/* 전체 선택/해제 */
-$("btnSelectAll")?.addEventListener("click", ()=>{
-  const wrap = $("tableWrap");
-  wrap.querySelectorAll("input.rowChk").forEach(c => c.checked = true);
-  wrap.querySelectorAll("tbody tr").forEach(tr => tr.classList.add("is-selected"));
-  refreshColorDropdownByCurrentRows_();
-  updateToolbar_();
-});
-$("btnSelectNone")?.addEventListener("click", ()=>{
-  const wrap = $("tableWrap");
-  wrap.querySelectorAll("input.rowChk").forEach(c => c.checked = false);
-  wrap.querySelectorAll("tbody tr").forEach(tr => tr.classList.remove("is-selected"));
-  refreshColorDropdownByCurrentRows_();
-  updateToolbar_();
-});
-
-
+    /* 검색 로딩 스피너 */
+    .spinner{
+      width:14px; height:14px;
+      border-radius:50%;
+      border:2px solid rgba(170,150,230,.25);
+      border-top-color: rgba(255,143,188,.85);
+      display:inline-block;
+      animation: spin .8s linear infinite;
+      vertical-align:-2px;
+    }
+    @keyframes spin{
+      to{ transform: rotate(360deg); }
+    }
   </style>
 </head>
 
@@ -394,13 +342,13 @@ $("btnSelectNone")?.addEventListener("click", ()=>{
 
           <div id="existBody" style="display:none; width:100%;">
             <div class="toolbar" id="tableToolbar" style="display:none;">
-  <span class="hint">
-    행 클릭하면 복사 · 여러 건이면 체크 후 <span class="kbd">변경</span> 적용
-  </span>
-  <span id="selCount" class="badge ok" style="display:none;">선택 0건</span>
-  <button class="btn" id="btnSelectAll" type="button" style="display:none;">전체 선택</button>
-  <button class="btn" id="btnSelectNone" type="button" style="display:none;">선택 해제</button>
-</div>
+              <span class="hint">
+                행 클릭하면 복사 · 여러 건이면 체크 후 <span class="kbd">변경</span> 적용
+              </span>
+              <span id="selCount" class="badge ok" style="display:none;">선택 0건</span>
+              <button class="btn" id="btnSelectAll" type="button" style="display:none;">전체 선택</button>
+              <button class="btn" id="btnSelectNone" type="button" style="display:none;">선택 해제</button>
+            </div>
 
             <div class="table-wrap" style="max-height:240px; width:100%; margin-top:8px;">
               <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:12px;">
@@ -642,6 +590,17 @@ function safeGet(row, idx){
   return (row[idx] ?? "");
 }
 
+/* ===================== 로딩 UI (원래 style에 들어가 있던 JS를 script로 이동) ===================== */
+function setLoadingUI_(on, msg){
+  const st = $("status");
+  if(!st) return;
+  if(on){
+    st.innerHTML = `<span class="spinner"></span> ${escapeHtml(msg || "로딩 중…")}`;
+  }else{
+    st.textContent = msg || "로딩 완료";
+  }
+}
+
 /* ===================== 매칭 컬럼: 헤더로 찾기 ===================== */
 let headerIndexMap = new Map();
 function getMatchIndexFromHeader_(){
@@ -719,12 +678,6 @@ function badgeHtml(type, text){
 }
 
 /* ===================== ✅ 색상 드롭다운 (상품코드 기준 필터 + I열만 표시 + 재고 선택 방지) ===================== */
-/*
-  - 옵션 텍스트: 색상명(I열)만
-  - LOW/OUT/N/A는 드롭박스에 보이지만 선택 불가(disabled)
-  - "상품코드" 기준으로 해당되는 색상만 노출
-    ✅ 구현 방식: 재고의 컬러코드(A열)가 "상품코드"로 시작(prefix)한다고 가정하여 필터링
-*/
 let colorSelectWired = false;
 
 function getAllowedProductCodesForDropdown_(){
@@ -1017,7 +970,7 @@ function parseCsvWithPapa(csvText, onDone){
 
 /* ===================== 1) 재고만 먼저 로드 ===================== */
 async function loadStockOnly(){
-  $("status").textContent = "재고 로딩 중…";
+  setLoadingUI_(true, "재고 로딩 중…");
   $("stat2").textContent = "";
   clearStockUI();
   hideExistPanel();
@@ -1039,10 +992,9 @@ async function loadStockOnly(){
       });
       stockLoaded = true;
 
-      // 캐시 기준 드롭다운(최초는 전체로 한 번)
       rebuildColorSelectOptions_();
 
-      $("status").textContent = "재고 로딩 완료 (캐시)";
+      setLoadingUI_(false, "재고 로딩 완료 (캐시)");
       $("stat2").textContent = `재고 ${stockMap.size.toLocaleString()}개 · 발주/출고는 조회 시 불러옵니다`;
     }
 
@@ -1057,20 +1009,19 @@ async function loadStockOnly(){
       });
       stockLoaded = true;
 
-      // 최신 재고로 드롭다운 갱신
       rebuildColorSelectOptions_();
 
-      $("status").textContent = "재고 로딩 완료";
+      setLoadingUI_(false, "재고 로딩 완료");
       $("stat2").textContent = `재고 ${stockMap.size.toLocaleString()}개 · 발주/출고는 조회 시 불러옵니다`;
     }else{
       if(!stockLoaded){
-        $("status").textContent = "재고 로드 실패: 시트 공개(보기 가능) 확인";
+        setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
       }
     }
   }catch(e){
     console.error(e);
     if(!stockLoaded){
-      $("status").textContent = "재고 로드 실패: 시트 공개(보기 가능) 확인";
+      setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
     }
   }
 }
@@ -1100,7 +1051,7 @@ async function ensureOrderAndExistLoaded_(){
   if(orderExistLoadingPromise) return orderExistLoadingPromise;
 
   orderExistLoadingPromise = (async ()=>{
-    $("status").textContent = "발주/출고 데이터 불러오는 중…";
+    setLoadingUI_(true, "발주/출고 데이터 불러오는 중…");
     $("btnSearch").disabled = true;
     try{
       const [orderCsv, existCsv] = await Promise.all([
@@ -1177,12 +1128,12 @@ async function ensureOrderAndExistLoaded_(){
         });
       });
 
-      $("status").textContent = "로딩 완료";
+      setLoadingUI_(false, "로딩 완료");
       $("stat2").textContent =
         `재고 ${stockMap.size.toLocaleString()}개 · 발주 ${orderRows.length.toLocaleString()}건 · 주문번호 ${orderIndexMap.size.toLocaleString()}개 · 출고 ${existRows.length.toLocaleString()}행`;
     }catch(e){
       console.error(e);
-      $("status").textContent = "로드 실패: 시트가 '보기 가능' 공개인지 확인하세요.";
+      setLoadingUI_(false, "로드 실패: 시트가 '보기 가능' 공개인지 확인하세요.");
       throw e;
     }finally{
       $("btnSearch").disabled = false;
@@ -1249,6 +1200,43 @@ function getCheckedIndexes_(){
   return Array.from(chks).map(c => Number(c.dataset.idx)).filter(n => !Number.isNaN(n));
 }
 
+/* ===================== 툴바(전체 선택/해제/선택 카운트) ===================== */
+function updateToolbar_(){
+  const tb = $("tableToolbar");
+  if(!tb) return;
+
+  const hasRows = lastOutRows && lastOutRows.length > 0;
+  tb.style.display = hasRows ? "flex" : "none";
+
+  const showBulk = hasRows && lastOutRows.length > 1;
+  $("btnSelectAll").style.display = showBulk ? "" : "none";
+  $("btnSelectNone").style.display = showBulk ? "" : "none";
+
+  const checked = getCheckedIndexes_().length;
+  const selBadge = $("selCount");
+  if(selBadge){
+    selBadge.style.display = showBulk ? "" : "none";
+    selBadge.textContent = `선택 ${checked}건`;
+    selBadge.className = checked ? "badge ok" : "badge na";
+  }
+}
+
+/* 전체 선택/해제 (버튼은 existBody 안에 있으니, DOM 준비된 지금 연결) */
+$("btnSelectAll")?.addEventListener("click", ()=>{
+  const wrap = $("tableWrap");
+  wrap.querySelectorAll("input.rowChk").forEach(c => c.checked = true);
+  wrap.querySelectorAll("tbody tr").forEach(tr => tr.classList.add("is-selected"));
+  refreshColorDropdownByCurrentRows_();
+  updateToolbar_();
+});
+$("btnSelectNone")?.addEventListener("click", ()=>{
+  const wrap = $("tableWrap");
+  wrap.querySelectorAll("input.rowChk").forEach(c => c.checked = false);
+  wrap.querySelectorAll("tbody tr").forEach(tr => tr.classList.remove("is-selected"));
+  refreshColorDropdownByCurrentRows_();
+  updateToolbar_();
+});
+
 /* ===================== 렌더 ===================== */
 function renderTable(outRows, stockTypes){
   const wrap = $("tableWrap");
@@ -1261,6 +1249,7 @@ function renderTable(outRows, stockTypes){
   if(!outRows || outRows.length === 0){
     wrap.innerHTML = `<div class="no-data">검색 결과가 없습니다.</div>`;
     $("btnCopy").disabled = true;
+    updateToolbar_();
     return;
   }
 
@@ -1307,21 +1296,23 @@ function renderTable(outRows, stockTypes){
 
   // ✅ 드롭다운: 현재 rows(체크 포함) 기준으로 필터 갱신
   refreshColorDropdownByCurrentRows_();
+
+  // 체크 이벤트
   wrap.querySelectorAll("input.rowChk").forEach(chk=>{
-  chk.addEventListener("change", ()=>{
-    const idx = Number(chk.dataset.idx);
-    const tr = chk.closest("tr");
-    if(tr){
-      tr.classList.toggle("is-selected", chk.checked);
-    }
-    refreshColorDropdownByCurrentRows_();
-    updateToolbar_();
+    chk.addEventListener("change", ()=>{
+      const tr = chk.closest("tr");
+      if(tr){
+        tr.classList.toggle("is-selected", chk.checked);
+      }
+      refreshColorDropdownByCurrentRows_();
+      updateToolbar_();
+    });
   });
-});
 
-updateToolbar_();
+  // 상단 툴바 표시/카운트 갱신
+  updateToolbar_();
 
-
+  // 셀 클릭 복사
   wrap.querySelectorAll(".copy").forEach(td=>{
     td.addEventListener("click", async ()=>{
       const text = (td.getAttribute("data-copy") || td.textContent || "").trim();
@@ -1385,6 +1376,7 @@ async function search(){
 
   if(!orderNo){
     $("tableWrap").innerHTML = `<div class="no-data">주문번호를 입력해주세요.</div>`;
+    updateToolbar_();
     return;
   }
 
@@ -1402,6 +1394,7 @@ async function search(){
       setPanel("manual", true);
       $("tableWrap").innerHTML =
         `<div class="no-data">발주서/출고 시트를 불러오지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
+      updateToolbar_();
       return;
     }
   }
@@ -1417,6 +1410,7 @@ async function search(){
     setPanel("manual", true);
     $("tableWrap").innerHTML =
       `<div class="no-data">발주서에서 주문번호를 찾지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
+    updateToolbar_();
     return;
   }
 
@@ -1582,6 +1576,7 @@ $("btnClear").addEventListener("click", ()=>{
   lastStockTypes = [];
   originalOutRows = [];
   lastSource = "none";
+  updateToolbar_();
 });
 
 $("orderInput").addEventListener("keydown", (e)=>{
