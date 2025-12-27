@@ -400,9 +400,9 @@ document.addEventListener("keydown", (e)=>{
     const TABLE_COLS_VIEW = TABLE_COLS_COPY.filter(c => !HIDE_IN_VIEW.has(c.label));
 
     const COL_WIDTH = {
-     "사방넷주문번호": 100, "쇼핑몰 주문번호(필수)": 120,
+    "요청일":80, "사방넷주문번호": 100, "쇼핑몰 주문번호(필수)": 120,
       "상품명": 200, "바코드": 120, "상품코드": 100, "상품컬러코드": 120, "결제금액": 100,
-      " 옵션(수집)": 120, "_default": 60
+      "옵션(수집)": 120, "_default": 60
     };
 
     /* ===================== 유틸 ===================== */
@@ -1385,7 +1385,7 @@ document.addEventListener("keydown", (e)=>{
         return;
       }
       if(!stockLoaded){
-        $("status").textContent = "재고가 아직 로딩 중입니다…";
+        $("status").textContent = "로딩 중";
         return;
       }
 
@@ -1437,7 +1437,7 @@ document.addEventListener("keydown", (e)=>{
       const color = normalizeKey($("manualColor").value);
       const qty = normalizeKey($("manualQty").value);
 
-      if(!color){ showToast("상품컬러코드를 입력해주세요"); return; }
+      if(!color){ showToast(""); return; }
       if(!stockLoaded){ showToast("재고 로딩 중…"); return; }
 
       const out = buildOutManual(color, qty);
@@ -1466,7 +1466,7 @@ document.addEventListener("keydown", (e)=>{
       if(lastOutRows.length > 1){
         targets = getCheckedIndexes_();
         if(targets.length === 0){
-          showToast("여러 건이면 적용할 행을 체크해주세요");
+          showToast("행을 체크해주세요");
           return;
         }
       }else{
