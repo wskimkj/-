@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Shipment</title>
+  <title> Shipment </title>
 
   <link rel="stylesheet" as="style" crossorigin
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
@@ -193,52 +193,7 @@
       border-top-color: rgba(255,143,188,.85);
       display:inline-block; animation: spin .8s linear infinite; vertical-align:-2px;
     }
-
     @keyframes spin{ to{ transform: rotate(360deg); } }
-
-    /* ===================== 🔴 DUP 경고 행 (테이블 상단 삽입) ===================== */
-    tr.dupWarnRow td{
-      padding: 12px 12px !important;
-      border-bottom: 1px solid rgba(255,35,35,.22) !important;
-      background: linear-gradient(90deg, rgba(255,35,35,.14), rgba(255,143,188,.10)) !important;
-    }
-    .dupWarnBox{ display:flex; flex-direction:column; gap:6px; }
-    .dupWarnTop{
-      display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-      font-weight: 900; color: rgba(135,0,0,.98);
-    }
-    .dupWarnPill{
-      display:inline-flex; align-items:center; gap:6px;
-      padding:4px 10px; border-radius:999px;
-      background: rgba(255,35,35,.14);
-      border:1px solid rgba(255,35,35,.35);
-      font-size:11px; font-weight:900;
-    }
-    .dupWarnHint{
-      font-size:11px; color: rgba(135,0,0,.78); font-weight: 800;
-    }
-    .dupWarnList{
-      display:flex; flex-direction:column; gap:6px; margin-top: 2px;
-    }
-    .dupWarnItem{
-      padding:8px 10px;
-      border-radius:12px;
-      border:1px solid rgba(255,35,35,.25);
-      background: rgba(255,255,255,.70);
-      font-size:12px;
-      color: rgba(47,42,58,.92);
-      font-weight: 800;
-      line-height: 1.35;
-    }
-    .dupWarnItem .meta{
-      margin-top:4px;
-      font-size:11px;
-      color: rgba(110,106,130,.85);
-      font-weight: 700;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
 
     /* ===================== ✅ 셀 호버 미리보기(오버레이) ===================== */
     #hoverTip{
@@ -258,8 +213,81 @@
     }
     #hoverTip.show{ display: block; opacity: 1; transform: translateY(0); }
 
-    /* ✅ 상단 요약 숨김 */
+    /* ✅ 상단 요약(재고/발주/주문번호/출고, OK n건, 복사가능) 숨김 */
     #stat2, #stockSummary, #copyGateMsg { display:none !important; }
+
+    /* ===================== 🔴 상단 고정 DUP 배너 ===================== */
+    .dupBanner{
+      margin-top: 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,35,35,.45);
+      background: linear-gradient(90deg, rgba(255,35,35,.18), rgba(255,143,188,.10));
+      box-shadow: 0 18px 50px rgba(255,35,35,.12);
+      padding: 12px 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .dupBannerLeft{ display:flex; align-items:center; gap:12px; }
+    .dupIcon{
+      width:38px; height:38px; border-radius:14px;
+      display:flex; align-items:center; justify-content:center;
+      background: rgba(255,35,35,.18);
+      border:1px solid rgba(255,35,35,.35);
+      font-size:18px;
+    }
+    .dupTitle{
+      font-size:15px;
+      font-weight: 900;
+      color: rgba(135,0,0,.98);
+      line-height: 1.1;
+    }
+    .dupSub{
+      margin-top: 2px;
+      font-size: 12px;
+      font-weight: 800;
+      color: rgba(135,0,0,.80);
+    }
+    .dupBannerRight{ display:flex; gap:8px; align-items:center; }
+    .dupBtn{
+      background: rgba(255,255,255,.85);
+      border:1px solid rgba(255,35,35,.35);
+    }
+    .dupBtn:hover{
+      border-color: rgba(255,35,35,.65);
+      box-shadow: 0 0 0 3px rgba(255,35,35,.12), var(--shadow2);
+    }
+    .dupBannerDetail{
+      width:100%;
+      margin-top: 10px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .dupCard{
+      border-radius:14px;
+      background: rgba(255,255,255,.78);
+      border: 1px solid rgba(255,35,35,.22);
+      padding: 10px 12px;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .dupLine1{
+      font-weight: 900;
+      font-size: 12.5px;
+      color: rgba(47,42,58,.94);
+    }
+    .dupLine2{
+      font-weight: 800;
+      font-size: 11.5px;
+      color: rgba(110,106,130,.88);
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
   </style>
 </head>
 
@@ -268,11 +296,11 @@
     <div class="card">
       <div class="card-inner">
         <div class="title">
-          <div>Shipment</div>
+          <div> Shipment </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <a class="pill" id="orderLink" href="#" target="_blank" rel="noopener noreferrer">발주서</a>
             <a class="pill" id="stockLink" href="#" target="_blank" rel="noopener noreferrer">재고</a>
-            <a class="pill" id="existLink" href="#" target="_blank" rel="noopener noreferrer">출고</a>
+            <a class="pill" id="existLink" href="#" target="_blank" rel="noopener noreferrer"> 출고 </a>
           </div>
         </div>
 
@@ -281,6 +309,21 @@
           <span id="stat2"></span>
           <span id="stockSummary"></span>
           <span id="copyGateMsg"></span>
+        </div>
+
+        <!-- ✅ 🔴 상단 DUP 경고 배너 -->
+        <div class="dupBanner" id="dupBanner" style="display:none;">
+          <div class="dupBannerLeft">
+            <div class="dupIcon">🔴</div>
+            <div>
+              <div class="dupTitle">이중 출고 의심</div>
+              <div class="dupSub" id="dupBannerSub">-</div>
+            </div>
+          </div>
+          <div class="dupBannerRight">
+            <button class="btn dupBtn" id="dupBannerToggle" type="button">자세히</button>
+          </div>
+          <div class="dupBannerDetail" id="dupBannerDetail" style="display:none;"></div>
         </div>
 
         <!-- 기존 등록 데이터 토글 패널 -->
@@ -305,8 +348,8 @@
                   <tr>
                     <th>사방넷주문번호</th>
                     <th>쇼핑몰 주문번호</th>
-                    <th>목적(D)</th>
-                    <th>전산 처리 방법(E)</th>
+                    <th>목적</th>
+                    <th>전산 처리 방법</th>
                     <th>기록일(있으면)</th>
                   </tr>
                 </thead>
@@ -319,7 +362,7 @@
           </div>
         </div>
 
-        <!-- Enter로만 조회 -->
+        <!-- ✅ 조회 버튼 제거: Enter로만 조회 -->
         <div class="row">
           <div class="input">
             <span class="field-label">주문번호</span>
@@ -374,7 +417,7 @@
     </div>
   </div>
 
-  <div id="toast">copy</div>
+  <div id="toast"> copy </div>
   <div id="hoverTip"></div>
 
   <script>
@@ -390,7 +433,7 @@
     const STOCK_SHEET_URL_VIEW = "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/edit?gid=366983013#gid=366983013";
     const STOCK_CSV_BASE = "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/export?format=csv&gid=366983013";
 
-    // 출고(목적/전산 처리 방법) 시트
+    // 출고 시트
     const EXIST_SHEET_URL_VIEW = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/edit?gid=0#gid=0";
     const EXIST_CSV_BASE = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/export?format=csv&gid=0";
 
@@ -501,13 +544,12 @@
         .trim()
         .toLowerCase();
     }
-
     function normDigits_(v){
       return String(v ?? "")
         .replace(/[^0-9]/g, "");
     }
 
-    // ✅ 과학적 표기(E+15 등) → 원래 숫자 문자열로 "복원"
+    // ✅ 과학적 표기(E+15 등) → 원래 숫자 문자열로 복원
     function sciToIntString_(s){
       s = String(s ?? "").trim();
       if(!/[eE]/.test(s)) return s;
@@ -536,7 +578,7 @@
       }
     }
 
-    // ✅ 포함 검색용 정규화 (CSV 깨짐 대응 + 과학적 표기 복원)
+    // ✅ 포함 검색용 정규화 (CSV 깨짐 대응)
     function normalizeForContains_(s){
       return normalizeKey(sciToIntString_(s));
     }
@@ -566,6 +608,67 @@
       if(!row || idx == null || idx < 0) return "";
       return (row[idx] ?? "");
     }
+
+    /* ===================== 🔴 DUP 배너 UI ===================== */
+    function hideDupBanner_(){
+      const b = $("dupBanner");
+      if(!b) return;
+      b.style.display = "none";
+      $("dupBannerSub").textContent = "-";
+      $("dupBannerDetail").innerHTML = "";
+      $("dupBannerDetail").style.display = "none";
+      $("dupBannerToggle").textContent = "자세히";
+    }
+
+    function renderDupBanner_(){
+      const b = $("dupBanner");
+      if(!b) return;
+
+      if(!dupMatchesForTable_ || dupMatchesForTable_.length === 0){
+        hideDupBanner_();
+        return;
+      }
+
+      const count = dupMatchesForTable_.length;
+      $("dupBannerSub").textContent = `출고 시트에 같은 검색어가 포함된 기록이 ${count}건 있어요.`;
+
+      const items = dupMatchesForTable_.slice(0, 12);
+      const more = count - items.length;
+
+      $("dupBannerDetail").innerHTML =
+        items.map(m => {
+          const line1 = [
+            m.mallNo ? `주문번호: ${m.mallNo}` : "",
+            m.reqDate ? `요청일: ${m.reqDate}` : "",
+            m.colorNm ? `상품컬러명: ${m.colorNm}` : ""
+          ].filter(Boolean).join(" · ");
+
+          const line2 = [
+            m.dText ? `메모: ${m.dText}` : "",
+            m.eText ? `처리: ${m.eText}` : ""
+          ].filter(Boolean).join(" · ");
+
+          return `
+            <div class="dupCard">
+              <div class="dupLine1">${escapeHtml(line1 || "기록 상세")}</div>
+              <div class="dupLine2">${escapeHtml(line2 || "")}</div>
+            </div>
+          `;
+        }).join("") + (more > 0 ? `<div class="dupSub">…외 ${more}건 더 있음</div>` : "");
+
+      b.style.display = "flex";
+
+      // 배너 뜰 때 토스트도 한 번
+      showToast(`🔴 이중출고 의심 ${count}건`);
+    }
+
+    $("dupBannerToggle")?.addEventListener("click", ()=>{
+      const d = $("dupBannerDetail");
+      if(!d) return;
+      const open = d.style.display !== "none";
+      d.style.display = open ? "none" : "flex";
+      $("dupBannerToggle").textContent = open ? "자세히" : "접기";
+    });
 
     /* ===================== 로딩 UI ===================== */
     function setLoadingUI_(on, msg){
@@ -641,11 +744,6 @@
       if(qty <= 0) return { type:"out", label:`재고 0`, qty };
       if(qty < LOW_STOCK_THRESHOLD) return { type:"low", label:`재고 ${qty} (${LOW_STOCK_THRESHOLD} 미만)`, qty };
       return { type:"ok", label:`재고 ${qty}`, qty };
-    }
-
-    function badgeHtml(type, text){
-      const cls = type === "ok" ? "badge ok" : type === "low" ? "badge low" : type === "out" ? "badge out" : "badge na";
-      return `<span class="${cls}">${escapeHtml(text)}</span>`;
     }
 
     /* ===================== ✅ 색상 드롭다운 ===================== */
@@ -754,6 +852,11 @@
 
     /* ✅ Ctrl+C 복사 차단용 플래그 */
     let copyBlocked_ = true;
+
+    function badgeHtml(type, text){
+      const cls = type === "ok" ? "badge ok" : type === "low" ? "badge low" : type === "out" ? "badge out" : "badge na";
+      return `<span class="${cls}">${escapeHtml(text)}</span>`;
+    }
 
     function gateCopyByTypes(types){
       let ok=0, low=0, out=0, na=0;
@@ -883,39 +986,50 @@
       }).join("");
     }
 
-    /* ===================== ✅ 이중출고(테이블 경고행) 매칭 결과 ===================== */
+    /* ===================== 🔴 이중출고 매칭 결과(배너용) ===================== */
     let dupMatchesForTable_ = [];
 
-    function computeDupMatchesForTable_(needle){
+    // ✅ 출고 시트에서 검색어가 "포함"된 기록을 찾아서 dupMatchesForTable_에 저장
+    function computeDupMatchesForTable_(needleRaw){
       dupMatchesForTable_ = [];
 
-      const q = normalizeForContains_(needle);
-      if(!q) return;
+      const q0 = normalizeForContains_(needleRaw);
+      if(!q0) return;
       if(!existLoaded || !existRows || existRows.length === 0) return;
 
-      // 기본 인덱스(0-based): A=0, C=2, D=3, E=4, N=13
+      // A열(요청일): 0 고정
       const aIdx = 0;
+
+      // C열(쇼핑몰 주문번호): 헤더로 찾고, 없으면 2
       const cIdx =
         existHeaderMap.get("쇼핑몰 주문번호(필수)") ??
         existHeaderMap.get("쇼핑몰 주문번호") ??
         2;
+
+      // D/E: 너 코드 기준 목적/전산 처리방법
       const dIdx = 3;
       const eIdx = 4;
-      const nIdx = 13; // N열(플레이엠디 상품컬러명)
+
+      // N열(상품컬러명(플레이엠디)): 헤더로 찾고, 없으면 13
+      const nIdx =
+        existHeaderMap.get("상품컬러명(플레이엠디)") ??
+        existHeaderMap.get("상품컬러명") ??
+        13;
 
       for(const r of existRows){
-        const dRaw = String(safeGet(r, dIdx) ?? "");
-        const eRaw = String(safeGet(r, eIdx) ?? "");
-        const dNorm = normalizeForContains_(dRaw);
-        const eNorm = normalizeForContains_(eRaw);
+        const d = String(safeGet(r, dIdx) ?? "");
+        const e = String(safeGet(r, eIdx) ?? "");
+        const dNorm = normalizeForContains_(d);
+        const eNorm = normalizeForContains_(e);
 
-        if(dNorm.includes(q) || eNorm.includes(q)){
+        // ✅ 검색어도 normalizeForContains_로 맞춰서 비교 (과학적 표기/공백 깨짐 방어)
+        if(dNorm.includes(q0) || eNorm.includes(q0)){
           dupMatchesForTable_.push({
-            reqDate: String(safeGet(r, aIdx) ?? "").trim(), // A
-            mallNo:  String(safeGet(r, cIdx) ?? "").trim(), // C
-            dText:   dRaw.trim(),                           // D
-            eText:   eRaw.trim(),                           // E
-            colorNm: String(safeGet(r, nIdx) ?? "").trim(), // N
+            reqDate: String(safeGet(r, aIdx) ?? "").trim(),
+            mallNo:  String(safeGet(r, cIdx) ?? "").trim(),
+            colorNm: String(safeGet(r, nIdx) ?? "").trim(),
+            dText: d.trim(),
+            eText: e.trim(),
           });
         }
       }
@@ -1027,6 +1141,7 @@
               pushIndex(orderIndexMap, mall, r);
               pushIndex(orderIndexByMall, mall, r);
             }
+
             if(sabang) pushIndex(orderIndexBySabang, sabang, r);
 
             if(idxTracking != null){
@@ -1086,6 +1201,7 @@
       $("stat2").textContent = "";
       clearStockUI();
       hideExistPanel();
+      hideDupBanner_();
       setPanel("manual", false);
       setPanel("change", false);
       copyBlocked_ = true;
@@ -1120,7 +1236,7 @@
       }
     }
 
-    /* ===================== 발주/출고: 캐시 우선 + 백그라운드 갱신 ===================== */
+    /* ===================== ✅ 발주/출고: 캐시 우선 + 백그라운드 갱신 ===================== */
     async function refreshOrderExistInBackground_(){
       if(orderExistRefreshingPromise) return orderExistRefreshingPromise;
 
@@ -1157,7 +1273,6 @@
         setLoadingUI_(true, "발주/출고 데이터 불러오는 중…");
 
         try{
-          // 0) 캐시 먼저
           const cachedOrder = loadCache_(ORDER_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
           const cachedExist = loadCache_(EXIST_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
 
@@ -1167,11 +1282,10 @@
           if(orderLoaded && existLoaded){
             setLoadingUI_(false, "로딩 완료 (캐시)");
             orderExistLoadingPromise = null;
-            refreshOrderExistInBackground_(); // await 안 함
+            refreshOrderExistInBackground_();
             return;
           }
 
-          // 1) 네트워크
           const [orderCsv, existCsv] = await Promise.all([
             fetchCsvSmart(ORDER_CSV_BASE),
             fetchCsvSmart(EXIST_CSV_BASE),
@@ -1334,44 +1448,6 @@
           </thead>
           <tbody>
       `;
-
-      // ✅ 🔴 DUP 경고 행: 테이블 맨 위에 삽입
-      if(dupMatchesForTable_ && dupMatchesForTable_.length){
-        const colSpan = 2 + TABLE_COLS_VIEW.length; // # + 선택 + 데이터컬럼 수
-        const items = dupMatchesForTable_.slice(0, 8);
-        const more = dupMatchesForTable_.length - items.length;
-
-        html += `
-          <tr class="dupWarnRow">
-            <td colspan="${colSpan}">
-              <div class="dupWarnBox">
-                <div class="dupWarnTop">
-                  <span class="dupWarnPill">🔴 이중 출고 의심 ${dupMatchesForTable_.length}건</span>
-                  <span class="dupWarnHint">출고시트 D/E에 검색어가 포함된 기록이 있습니다.</span>
-                </div>
-
-                <div class="dupWarnList">
-                  ${items.map(m=>`
-                    <div class="dupWarnItem">
-                      <div>
-                        <b>요청일</b>: ${escapeHtml(m.reqDate || "-")}
-                        &nbsp;·&nbsp;
-                        <b>C</b>: ${escapeHtml(m.mallNo || "-")}
-                        ${m.colorNm ? `&nbsp;·&nbsp;<b>N</b>: ${escapeHtml(m.colorNm)}` : ``}
-                      </div>
-                      <div class="meta">
-                        <span><b>D</b>: ${escapeHtml(m.dText || "-")}</span>
-                        <span><b>E</b>: ${escapeHtml(m.eText || "-")}</span>
-                      </div>
-                    </div>
-                  `).join("")}
-                  ${more > 0 ? `<div class="dupWarnHint">…외 ${more}건 더 있음</div>` : ``}
-                </div>
-              </div>
-            </td>
-          </tr>
-        `;
-      }
 
       outRows.forEach((o, i)=>{
         const t = stockTypes[i] || "na";
@@ -1569,8 +1645,7 @@
       setPanel("change", false);
       clearStockUI();
       hideExistPanel();
-
-      dupMatchesForTable_ = [];
+      hideDupBanner_();
       lastOutRows = [];
       lastStockTypes = [];
       originalOutRows = [];
@@ -1593,8 +1668,6 @@
           await ensureOrderAndExistLoaded_();
         }catch{
           $("status").textContent = "발주/출고 로드 실패 (수동 입력 가능)";
-          computeDupMatchesForTable_(orderNoRaw);
-          showExistPanelByOrderNo_(orderNo);
           setPanel("manual", true);
           $("tableWrap").innerHTML =
             `<div class="no-data">발주서/출고 시트를 불러오지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
@@ -1604,10 +1677,12 @@
         }
       }
 
-      // ✅ 출고시트 D/E 포함 매칭(과학적 표기 복원 포함)
+      // ✅ (중요) 발주서 검색 전에 먼저 "출고시트 중복" 체크 → 배너 표시
       computeDupMatchesForTable_(orderNoRaw);
+      renderDupBanner_();
 
       const qRaw = orderNoRaw;
+
       const q = normalizeKey(qRaw);
       const qMall = normalizeOrderNo(qRaw);
       const qLoose = normLoose_(qRaw);
@@ -1649,13 +1724,8 @@
       if(rows.length === 0){
         showExistPanelByOrderNo_(orderNo);
         setPanel("manual", true);
-
-        // ✅ 발주서 결과가 없어도, “이중출고 경고행”은 보여주고 싶으면
-        //    더미 테이블 1행을 만들어 렌더해서 경고행이 뜨게 함
-        //    (원치 않으면 아래 3줄을 지워도 됨)
-        renderTable([buildOutManual("", "")], ["na"]);
-        $("tableWrap").querySelectorAll("tbody tr[data-idx]").forEach(tr => tr.style.display = "none");
-
+        $("tableWrap").innerHTML =
+          `<div class="no-data">발주서에서 주문번호를 찾지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
         updateToolbar_();
         hideHoverTip_();
         return;
@@ -1683,9 +1753,6 @@
 
       if(!color){ showToast(""); return; }
       if(!stockLoaded){ showToast("재고 로딩 중…"); return; }
-
-      // 수동 입력에서도, 검색창 값으로 이중출고 경고를 띄우고 싶으면:
-      computeDupMatchesForTable_($("orderInput").value);
 
       const out = buildOutManual(color, qty);
       const st = stockStatusByColorCode(out["상품컬러코드"]);
@@ -1764,7 +1831,6 @@
       const key = (e.key || "").toLowerCase();
       if(!e.ctrlKey || e.altKey || e.metaKey) return;
       if(key !== "c") return;
-
       if(isTypingTarget_(e.target)) return;
 
       if(lastOutRows && lastOutRows.length > 0){
@@ -1788,10 +1854,10 @@
       $("tableWrap").innerHTML = `<div class="no-data">검색 결과가 없습니다.</div>`;
       clearStockUI();
       hideExistPanel();
+      hideDupBanner_();
       setPanel("manual", false);
       setPanel("change", false);
 
-      dupMatchesForTable_ = [];
       lastOutRows = [];
       lastStockTypes = [];
       originalOutRows = [];
@@ -1802,7 +1868,7 @@
       hideHoverTip_();
     }
 
-    /* ===================== 시작 ===================== */
+    /* ===================== 검색/버튼 이벤트 ===================== */
     $("orderInput").addEventListener("keydown", (e)=>{
       if(e.key === "Enter") search();
     });
@@ -1810,6 +1876,7 @@
     $("btnChangeApply").addEventListener("click", applyChange);
     $("btnChangeReset").addEventListener("click", resetChange);
 
+    /* ===================== 시작 ===================== */
     initHoverTip_();
     loadStockOnly();
   </script>
