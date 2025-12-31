@@ -472,7 +472,7 @@
         .filter(h => !["요청일","수령인"].includes(h))
         .map(h => ({ key:h, label:h }))
     ];
-    const TABLE_COLS_COPY = TABLE_COLS_ALL.filter(c => !EXCLUDE_IN_COPY.has(c.label));
+const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(단 값만 바꿀 거니까)
     const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
 
     const COL_WIDTH = {
@@ -1488,27 +1488,25 @@
       });
     }
 
-    function buildTSV(outRows){
+function buildTSV(outRows){
   const lines = [];
   outRows.forEach(o=>{
-    const vals = TABLE_COLS_COPY.map(c =>
--     String(o[c.key] ?? "").replace(/\t/g," ").replace(/\r?\n/g," ")
-+     (c.key === "운송장 번호" ? "" : String(o[c.key] ?? ""))
-+       .replace(/\t/g," ").replace(/\r?\n/g," ")
-    );
+    const vals = TABLE_COLS_COPY.map(c => {
+      const v = (c.key === "운송장 번호") ? "" : String(o[c.key] ?? "");
+      return v.replace(/\t/g," ").replace(/\r?\n/g," ");
+    });
     lines.push(vals.join("\t"));
   });
   return lines.join("\n");
 }
 
-
-    function buildHTMLTable(outRows){
+function buildHTMLTable(outRows){
   const tdStyle = "border:1px solid #eee;padding:6px 8px;text-align:center;vertical-align:middle;";
   const tbody = outRows.map(o => {
-    const tds = TABLE_COLS_COPY.map(c =>
--     `<td style="${tdStyle}">${escapeHtml(String(o[c.key] ?? ""))}</td>`
-+     `<td style="${tdStyle}">${escapeHtml(c.key === "운송장 번호" ? "" : String(o[c.key] ?? ""))}</td>`
-    ).join("");
+    const tds = TABLE_COLS_COPY.map(c => {
+      const v = (c.key === "운송장 번호") ? "" : String(o[c.key] ?? "");
+      return `<td style="${tdStyle}">${escapeHtml(v)}</td>`;
+    }).join("");
     return `<tr>${tds}</tr>`;
   }).join("");
   return `<table style="border-collapse:collapse;"><tbody>${tbody}</tbody></table>`.trim();
