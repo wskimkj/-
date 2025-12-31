@@ -154,7 +154,6 @@
     }
     #toast.show{opacity:1; transform:translateY(0);}
 
-    /* ===================== UX 업그레이드 ===================== */
     .input:focus-within, .miniinput:focus-within{
       border-color: rgba(255,143,188,.55);
       box-shadow: 0 0 0 3px rgba(255,143,188,.12), var(--shadow2);
@@ -195,7 +194,6 @@
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
 
-    /* ===================== ✅ 셀 호버 미리보기(오버레이) ===================== */
     #hoverTip{
       position: fixed; z-index: 10000;
       max-width: min(560px, 92vw); max-height: min(280px, 40vh);
@@ -213,10 +211,9 @@
     }
     #hoverTip.show{ display: block; opacity: 1; transform: translateY(0); }
 
-    /* ✅ 상단 요약 숨김 */
+    /* 상단 요약 숨김 */
     #stat2, #stockSummary, #copyGateMsg { display:none !important; }
 
-    /* ===================== 🔴 상단 고정 DUP 배너 ===================== */
     .dupBanner{
       margin-top: 12px;
       border-radius: 18px;
@@ -311,7 +308,6 @@
           <span id="copyGateMsg"></span>
         </div>
 
-        <!-- ✅ 🔴 상단 DUP 경고 배너 -->
         <div class="dupBanner" id="dupBanner" style="display:none;">
           <div class="dupBannerLeft">
             <div class="dupIcon">🔴</div>
@@ -326,7 +322,6 @@
           <div class="dupBannerDetail" id="dupBannerDetail" style="display:none;"></div>
         </div>
 
-        <!-- 기존 등록 데이터 토글 패널 -->
         <div class="panel" id="existPanel" style="display:none;">
           <span class="label">기존 등록 데이터</span>
           <button class="btn" id="btnExistToggle" type="button">펼치기</button>
@@ -362,15 +357,13 @@
           </div>
         </div>
 
-        <!-- ✅ 조회 버튼 제거: Enter로만 조회 -->
         <div class="row">
           <div class="input">
-            <span class="field-label">주문번호</span>
+            <span class="field-label">검색</span>
             <input id="orderInput" type="text" placeholder="주문번호/송장/연락처/수령인 입력 (Enter)" />
           </div>
         </div>
 
-        <!-- 발주서에 주문번호 없을 때: 수동 입력 -->
         <div class="panel" id="manualPanel">
           <span class="label">발주서에 없음 → 수동 입력</span>
           <div class="miniinput">
@@ -385,7 +378,6 @@
           <span class="minihelp">재고 10 미만/0/미등록이면 복사 차단 · Ctrl+C로 복사</span>
         </div>
 
-        <!-- 발주서에서 불러온 후: 상품 변경 -->
         <div class="panel" id="changePanel">
           <span class="label">변경</span>
 
@@ -425,15 +417,12 @@
     const LOW_STOCK_THRESHOLD = 10;
 
     /* ===================== 시트 ===================== */
-    // 발주서
     const ORDER_SHEET_URL_VIEW = "https://docs.google.com/spreadsheets/d/1_Bxfag-90U6u-6JbhxNqeoD9vRns-CpPeXPIJYO1Z5o/edit?gid=518656308#gid=518656308";
     const ORDER_CSV_BASE = "https://docs.google.com/spreadsheets/d/1_Bxfag-90U6u-6JbhxNqeoD9vRns-CpPeXPIJYO1Z5o/export?format=csv&gid=518656308";
 
-    // 재고 시트
     const STOCK_SHEET_URL_VIEW = "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/edit?gid=366983013#gid=366983013";
     const STOCK_CSV_BASE = "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/export?format=csv&gid=366983013";
 
-    // ✅ 출고 시트 2개 (기존/2026)
     const EXIST_SHEET_URL_VIEW_2025 = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/edit?gid=0#gid=0";
     const EXIST_CSV_BASE_2025 = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/export?format=csv&gid=0";
 
@@ -444,7 +433,7 @@
     document.getElementById("stockLink").href = STOCK_SHEET_URL_VIEW;
     document.getElementById("existLink").href = EXIST_SHEET_URL_VIEW_2026;
 
-    /* ===================== ✅ ESC: 전체 초기화 ===================== */
+    /* ===================== ESC: 전체 초기화 ===================== */
     document.addEventListener("keydown", (e)=>{
       if(e.key !== "Escape") return;
       e.preventDefault();
@@ -452,7 +441,6 @@
     });
 
     /* ===================== 강제 포함 B/C/D ===================== */
-    // CSV 0-based: A=0, B=1, C=2, D=3
     const EXTRA_COLS = [
       { key: "__B", label: "사방넷주문번호", idx: 1 },
       { key: "__C", label: "쇼핑몰 주문번호(필수)", idx: 2 },
@@ -467,39 +455,31 @@
       "비고"
     ];
 
-    /* ===================== 결과 테이블 컬럼(화면 숨김 + 복사 전체 포함) ===================== */
-    // ✅ 요구사항 1)
-    // - 추가(노출): 운송장 번호, 받는분연락처  → hide에서 제거
-    // - 숨김(미노출): 바코드, 상품코드     → hide에 추가
+    /* ===================== 화면 숨김/복사 제외 규칙 ===================== */
+    // 요구사항: 노출 추가(운송장/연락처), 숨김(바코드/상품코드)
     const HIDE_IN_VIEW = new Set([
       "배송메세지","큐텐(한글상품명)","큐텐바코드","쇼핑몰(참고용)","상품명(수집)","비고","주문자명",
-      "받는분 기타연락처","주소",
-      // ✅ 숨김으로 변경
-      "바코드","상품코드"
+      "받는분 기타연락처","주소","배송수단","바코드","상품코드"
     ]);
 
+    // 요구사항: 운송장 번호는 "노출"하되, 복사에서는 제외
     const EXCLUDE_IN_COPY = new Set(["운송장 번호"]);
 
-  // (1) 전체 컬럼(마스터)
-const TABLE_COLS_ALL = [
-  { key: "요청일", label: "요청일" },
-  ...EXTRA_COLS.map(c => ({ key:c.key, label:c.label })),
-  { key: "수령인", label: "수령인" },
-  ...OUTPUT_HEADERS
-    .filter(h => !["요청일","수령인"].includes(h))
-    .map(h => ({ key:h, label:h }))
-];
-
-// (2) ✅ 복사용 컬럼: 운송장 번호 제외
-const TABLE_COLS_COPY = TABLE_COLS_ALL.filter(c => !EXCLUDE_IN_COPY.has(c.label));
-
-// (3) ✅ 화면용 컬럼: 숨김 규칙만 적용 (운송장 번호는 HIDE에 없으면 화면에 노출됨)
-const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
+    const TABLE_COLS_ALL = [
+      { key: "요청일", label: "요청일" },
+      ...EXTRA_COLS.map(c => ({ key:c.key, label:c.label })),
+      { key: "수령인", label: "수령인" },
+      ...OUTPUT_HEADERS
+        .filter(h => !["요청일","수령인"].includes(h))
+        .map(h => ({ key:h, label:h }))
+    ];
+    const TABLE_COLS_COPY = TABLE_COLS_ALL.filter(c => !EXCLUDE_IN_COPY.has(c.label));
+    const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
 
     const COL_WIDTH = {
-      "요청일":80, "사방넷주문번호": 100, "쇼핑몰 주문번호(필수)": 130,"쇼핑몰":80,
-      "상품명": 200, "바코드": 120, "상품코드": 100, "운송장 번호": 130, "상품컬러코드": 120, "결제금액": 80,
-      "옵션(수집)": 120, "운송장 번호": 130, "받는분연락처": 130,
+      "요청일":50, "사방넷주문번호": 80, "쇼핑몰 주문번호(필수)": 120,"쇼핑몰":80,
+      "상품명": 150, "상품컬러코드": 100, "결제금액": 80,
+      "옵션(수집)": 100, "운송장 번호": 120, "받는분연락처": 100,
       "_default": 60
     };
 
@@ -527,7 +507,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       return false;
     }
 
-    async function fetchText(url, timeoutMs = 9000){
+    async function fetchText(url, timeoutMs = 12000){
       const controller = new AbortController();
       const t = setTimeout(()=>controller.abort(), timeoutMs);
       try{
@@ -539,7 +519,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       }
     }
 
-    async function fetchCsvSmart(baseUrl, timeoutMs=9000){
+    async function fetchCsvSmart(baseUrl, timeoutMs=12000){
       const t1 = await fetchText(baseUrl, timeoutMs).catch(()=> "");
       if(!looksLikeBadCsv(t1)) return t1;
       const t2 = await fetchText(withCacheBust(baseUrl), timeoutMs).catch(()=> "");
@@ -565,17 +545,14 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
         .replace(/[^0-9]/g, "");
     }
 
-    // ✅ 과학적 표기(E+15 등) → 원래 숫자 문자열로 복원
     function sciToIntString_(s){
       s = String(s ?? "").trim();
       if(!/[eE]/.test(s)) return s;
-
       const m = s.match(/^([+-]?\d+(?:\.\d+)?)[eE]([+-]?\d+)$/);
       if(!m) return s;
 
       let mant = m[1];
       const exp = parseInt(m[2], 10);
-
       const sign = mant.startsWith("-") ? "-" : "";
       mant = mant.replace(/^[+-]/, "");
 
@@ -585,16 +562,13 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       const digits = (intPart + fracPart).replace(/^0+/, "") || "0";
 
       const shift = exp - fracPart.length;
-      if(shift >= 0){
-        return sign + digits + "0".repeat(shift);
-      }else{
-        const cut = digits.length + shift;
-        if(cut <= 0) return sign + "0";
-        return sign + digits.slice(0, cut);
-      }
+      if(shift >= 0) return sign + digits + "0".repeat(shift);
+
+      const cut = digits.length + shift;
+      if(cut <= 0) return sign + "0";
+      return sign + digits.slice(0, cut);
     }
 
-    // ✅ 포함 검색용 정규화 (CSV 깨짐 대응)
     function normalizeForContains_(s){
       return normalizeKey(sciToIntString_(s));
     }
@@ -620,71 +594,6 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
         .replaceAll("'","&#039;");
     }
 
-    function safeGet(row, idx){
-      if(!row || idx == null || idx < 0) return "";
-      return (row[idx] ?? "");
-    }
-
-    /* ===================== 🔴 DUP 배너 UI ===================== */
-    function hideDupBanner_(){
-      const b = $("dupBanner");
-      if(!b) return;
-      b.style.display = "none";
-      $("dupBannerSub").textContent = "-";
-      $("dupBannerDetail").innerHTML = "";
-      $("dupBannerDetail").style.display = "none";
-      $("dupBannerToggle").textContent = "자세히";
-    }
-
-    function renderDupBanner_(){
-      const b = $("dupBanner");
-      if(!b) return;
-
-      if(!dupMatchesForTable_ || dupMatchesForTable_.length === 0){
-        hideDupBanner_();
-        return;
-      }
-
-      const count = dupMatchesForTable_.length;
-      $("dupBannerSub").textContent = `출고 시트(2025/2026)에 같은 검색어가 포함된 기록이 ${count}건 있어요.`;
-
-      const items = dupMatchesForTable_.slice(0, 12);
-      const more = count - items.length;
-
-      $("dupBannerDetail").innerHTML =
-        items.map(m => {
-          const line1 = [
-            m.sheetTag ? `시트: ${m.sheetTag}` : "",
-            m.mallNo ? `주문번호: ${m.mallNo}` : "",
-            m.reqDate ? `요청일: ${m.reqDate}` : "",
-            m.colorNm ? `상품컬러명: ${m.colorNm}` : ""
-          ].filter(Boolean).join(" · ");
-
-          const line2 = [
-            m.dText ? `메모: ${m.dText}` : "",
-            m.eText ? `처리: ${m.eText}` : ""
-          ].filter(Boolean).join(" · ");
-
-          return `
-            <div class="dupCard">
-              <div class="dupLine1">${escapeHtml(line1 || "기록 상세")}</div>
-              <div class="dupLine2">${escapeHtml(line2 || "")}</div>
-            </div>
-          `;
-        }).join("") + (more > 0 ? `<div class="dupSub">…외 ${more}건 더 있음</div>` : "");
-
-      b.style.display = "flex";
-      showToast(`🔴 이중출고 의심 ${count}건`);
-    }
-
-    $("dupBannerToggle")?.addEventListener("click", ()=>{
-      const d = $("dupBannerDetail");
-      if(!d) return;
-      const open = d.style.display !== "none";
-      d.style.display = open ? "none" : "flex";
-      $("dupBannerToggle").textContent = open ? "자세히" : "접기";
-    });
-
     /* ===================== 로딩 UI ===================== */
     function setLoadingUI_(on, msg){
       const st = $("status");
@@ -696,24 +605,12 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       }
     }
 
-    /* ===================== 매칭 컬럼: 헤더로 찾기 ===================== */
-    let headerIndexMap = new Map();
-    function getMatchIndexFromHeader_(){
-      const idx = headerIndexMap.get("쇼핑몰 주문번호(필수)");
-      if(idx == null){
-        const idx2 = headerIndexMap.get("쇼핑몰 주문번호");
-        if(idx2 != null) return idx2;
-      }
-      return 2;
-    }
-
-    /* ===================== 재고/상품명 유틸 ===================== */
+    /* ===================== 재고 맵 ===================== */
     let stockMap = new Map();
     let stockInfoMap = new Map();
 
     function colorNameFromStock_(colorCodeRaw){
       const code = normColorCode(colorCodeRaw);
-      if(!code) return "";
       const info = stockInfoMap.get(code);
       return (info?.colorName || "").trim();
     }
@@ -740,7 +637,6 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
 
     function nameFromStock_(colorCodeRaw){
       const code = normColorCode(colorCodeRaw);
-      if(!code) return "";
       const info = stockInfoMap.get(code);
       if(!info) return "";
       const a = (info.name || "").trim();
@@ -752,16 +648,14 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
     function stockStatusByColorCode(colorCodeRaw){
       const code = normColorCode(colorCodeRaw);
       if(!code) return { type:"na", label:"재고 미등록", qty:null };
-      if(!stockMap.has(code)){
-        return { type:"na", label:"재고 미등록", qty:null };
-      }
+      if(!stockMap.has(code)) return { type:"na", label:"재고 미등록", qty:null };
       const qty = stockMap.get(code);
       if(qty <= 0) return { type:"out", label:`재고 0`, qty };
       if(qty < LOW_STOCK_THRESHOLD) return { type:"low", label:`재고 ${qty} (${LOW_STOCK_THRESHOLD} 미만)`, qty };
       return { type:"ok", label:`재고 ${qty}`, qty };
     }
 
-    /* ===================== ✅ 색상 드롭다운 ===================== */
+    /* ===================== 색상 드롭다운 ===================== */
     let colorSelectWired = false;
 
     function getAllowedProductCodesForDropdown_(){
@@ -821,9 +715,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       const sel = $("changeColorSelect");
       const code = normColorCode($("changeColor")?.value || "");
       const st = stockStatusByColorCode(code);
-      if(sel){
-        sel.value = (st.type === "ok") ? code : "";
-      }
+      if(sel) sel.value = (st.type === "ok") ? code : "";
     }
 
     function wireColorSelect_(){
@@ -843,100 +735,496 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       input.addEventListener("input", ()=>{
         const code = normColorCode(input.value);
         const st = stockStatusByColorCode(code);
-        if(st.type === "ok"){
-          sel.value = code;
-        }else{
-          sel.value = "";
-        }
+        sel.value = (st.type === "ok") ? code : "";
       });
 
       colorSelectWired = true;
     }
 
-    /* ===================== UI ===================== */
+    /* ===================== 숨김 UI ===================== */
     function clearStockUI(){
       $("stockSummary").textContent = "";
       $("copyGateMsg").textContent = "";
       $("copyGateMsg").className = "";
     }
-
     function setPanel(which, on){
       const el = which === "manual" ? $("manualPanel") : $("changePanel");
       el.classList.toggle("show", !!on);
     }
 
-    /* ✅ Ctrl+C 복사 차단용 플래그 */
-    let copyBlocked_ = true;
-
-    function badgeHtml(type, text){
-      const cls = type === "ok" ? "badge ok" : type === "low" ? "badge low" : type === "out" ? "badge out" : "badge na";
-      return `<span class="${cls}">${escapeHtml(text)}</span>`;
+    /* ===================== DUP 배너 ===================== */
+    let dupMatchesForTable_ = [];
+    function hideDupBanner_(){
+      const b = $("dupBanner");
+      if(!b) return;
+      b.style.display = "none";
+      $("dupBannerSub").textContent = "-";
+      $("dupBannerDetail").innerHTML = "";
+      $("dupBannerDetail").style.display = "none";
+      $("dupBannerToggle").textContent = "자세히";
     }
-
-    function gateCopyByTypes(types){
-      let ok=0, low=0, out=0, na=0;
-      for(const t of types){
-        if(t === "ok") ok++;
-        else if(t === "low") low++;
-        else if(t === "out") out++;
-        else na++;
-      }
-
-      const badges = [];
-      if(out) badges.push(badgeHtml("out", `OUT ${out}건`));
-      if(low) badges.push(badgeHtml("low", `LOW ${low}건`));
-      if(na) badges.push(badgeHtml("na", `N/A ${na}건`));
-      if(!out && !low && !na) badges.push(badgeHtml("ok", `OK ${ok}건`));
-      $("stockSummary").innerHTML = badges.join(" ");
-
-      const blocked = (out > 0 || low > 0 || na > 0);
-      copyBlocked_ = blocked;
-
-      if(blocked){
-        if(out > 0){
-          $("copyGateMsg").textContent = "출고요청 방지: 재고 0(OUT) 포함";
-          $("copyGateMsg").className = "warnline out";
-        }else if(low > 0){
-          $("copyGateMsg").textContent = `출고요청 방지: 재고 ${LOW_STOCK_THRESHOLD} 미만(LOW) 포함`;
-          $("copyGateMsg").className = "warnline low";
-        }else{
-          $("copyGateMsg").textContent = "출고요청 방지: 재고 미등록(N/A) 포함";
-          $("copyGateMsg").className = "warnline na";
-        }
-      }else{
-        $("copyGateMsg").textContent = "복사 가능 (Ctrl+C)";
-        $("copyGateMsg").className = "warnline";
-      }
-    }
-
-    function getCopyTargetIndexes_(){
-      if(!lastOutRows || lastOutRows.length === 0) return [];
-      const checked = getCheckedIndexes_();
-      return (checked && checked.length) ? checked : lastOutRows.map((_, i)=>i);
-    }
-
-    function updateCopyGateBySelection_(){
-      if(!lastOutRows || lastOutRows.length === 0){
-        clearStockUI();
-        copyBlocked_ = true;
+    function renderDupBanner_(){
+      const b = $("dupBanner");
+      if(!b) return;
+      if(!dupMatchesForTable_ || dupMatchesForTable_.length === 0){
+        hideDupBanner_();
         return;
       }
-      const idxs = getCopyTargetIndexes_();
-      const types = idxs.map(i => stockStatusByColorCode(lastOutRows[i]["상품컬러코드"]).type);
-      gateCopyByTypes(types);
+      const count = dupMatchesForTable_.length;
+      $("dupBannerSub").textContent = `출고 시트(2025/2026)에 같은 검색어가 포함된 기록이 ${count}건 있어요.`;
 
-      const checkedCount = getCheckedIndexes_().length;
-      if(checkedCount > 0){
-        $("copyGateMsg").textContent = `선택 ${checkedCount}건 기준: ` + $("copyGateMsg").textContent;
+      const items = dupMatchesForTable_.slice(0, 12);
+      const more = count - items.length;
+
+      $("dupBannerDetail").innerHTML =
+        items.map(m => {
+          const line1 = [
+            m.sheetTag ? `시트: ${m.sheetTag}` : "",
+            m.mallNo ? `주문번호: ${m.mallNo}` : "",
+            m.reqDate ? `요청일: ${m.reqDate}` : "",
+            m.colorNm ? `상품컬러명: ${m.colorNm}` : ""
+          ].filter(Boolean).join(" · ");
+
+          const line2 = [
+            m.dText ? `메모: ${m.dText}` : "",
+            m.eText ? `처리: ${m.eText}` : ""
+          ].filter(Boolean).join(" · ");
+
+          return `
+            <div class="dupCard">
+              <div class="dupLine1">${escapeHtml(line1 || "기록 상세")}</div>
+              <div class="dupLine2">${escapeHtml(line2 || "")}</div>
+            </div>
+          `;
+        }).join("") + (more > 0 ? `<div class="dupSub">…외 ${more}건 더 있음</div>` : "");
+
+      b.style.display = "flex";
+      showToast(`🔴 이중출고 의심 ${count}건`);
+    }
+    $("dupBannerToggle")?.addEventListener("click", ()=>{
+      const d = $("dupBannerDetail");
+      if(!d) return;
+      const open = d.style.display !== "none";
+      d.style.display = open ? "none" : "flex";
+      $("dupBannerToggle").textContent = open ? "자세히" : "접기";
+    });
+
+    /* ===================== 로컬 캐시 ===================== */
+    const STOCK_CACHE_KEY = "SHIPMENT_STOCK_CSV_CACHE_V1";
+    const STOCK_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+
+    const ORDER_CACHE_KEY = "SHIPMENT_ORDER_CSV_CACHE_V1";
+    const EXIST_CACHE_KEY_2025 = "SHIPMENT_EXIST_CSV_CACHE_2025_V1";
+    const EXIST_CACHE_KEY_2026 = "SHIPMENT_EXIST_CSV_CACHE_2026_V1";
+    const ORDEREXIST_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+
+    function loadCache_(key, ttl){
+      try{
+        const raw = localStorage.getItem(key);
+        if(!raw) return null;
+        const obj = JSON.parse(raw);
+        if(!obj || !obj.csv || !obj.ts) return null;
+        if(Date.now() - obj.ts > ttl) return null;
+        return obj.csv;
+      }catch{ return null; }
+    }
+    function saveCache_(key, csv){
+      try{ localStorage.setItem(key, JSON.stringify({ ts: Date.now(), csv })); }catch{}
+    }
+    function loadStockCache_(){ return loadCache_(STOCK_CACHE_KEY, STOCK_CACHE_TTL_MS); }
+    function saveStockCache_(csv){ saveCache_(STOCK_CACHE_KEY, csv); }
+
+    /* ===================== ✅ 스트리밍 파서 (step) ===================== */
+    function parseCsvStream_(csvText, {
+      onHeader,
+      onRow,
+      onDone,
+      onError
+    }){
+      let headerDone = false;
+
+      Papa.parse(csvText, {
+        skipEmptyLines: true,
+        worker: false,         // step/abort 안정성 위해 false
+        step: (results, parser)=>{
+          const row = results.data;
+          if(!row || row.length === 0) return;
+
+          if(!headerDone){
+            headerDone = true;
+            onHeader?.(row.map(h => normalizeKey(h)));
+            return;
+          }
+
+          try{
+            onRow?.(row, parser);
+          }catch(e){
+            try{ parser.abort(); }catch{}
+            onError?.(e);
+          }
+        },
+        complete: ()=>{
+          onDone?.();
+        },
+        error: (err)=>{
+          onError?.(err);
+        }
+      });
+    }
+
+    /* ===================== 재고 로드 ===================== */
+    let stockLoaded = false;
+
+    async function loadStockOnly(){
+      setLoadingUI_(true, "재고 로딩 중…");
+      clearStockUI();
+      hideExistPanel();
+      hideDupBanner_();
+      setPanel("manual", false);
+      setPanel("change", false);
+      copyBlocked_ = true;
+      wireColorSelect_();
+
+      try{
+        const cached = loadStockCache_();
+        if(cached){
+          buildStockFromCsvText_(cached);
+          stockLoaded = true;
+          rebuildColorSelectOptions_();
+          setLoadingUI_(false, "재고 로딩 완료 (캐시)");
+        }
+
+        const stockCsv = await fetchCsvSmart(STOCK_CSV_BASE);
+        if(!looksLikeBadCsv(stockCsv)){
+          saveStockCache_(stockCsv);
+          buildStockFromCsvText_(stockCsv);
+          stockLoaded = true;
+          rebuildColorSelectOptions_();
+          setLoadingUI_(false, "재고 로딩 완료");
+        }else{
+          if(!stockLoaded) setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
+        }
+      }catch(e){
+        console.error(e);
+        if(!stockLoaded) setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
       }
     }
 
-    /* ===================== 기존 데이터(목적/처리) ===================== */
-    // ✅ existRows는 여러 시트 합침: { row:[...], sheetTag:"2025"|"2026", headerMap:Map }
-    let existRows = [];
-    let existIndexBySabang = new Map(); // key -> item[]
-    let existIndexByMall = new Map();   // key -> item[]
+    function buildStockFromCsvText_(csvText){
+      stockMap = new Map();
+      stockInfoMap = new Map();
 
+      let header = null;
+      parseCsvStream_(csvText, {
+        onHeader: (h)=>{ header = h; },
+        onRow: (r)=>{
+          // 기존 로직과 동일(열 위치 가정): A=0, F=5, I=8, K=10
+          const code = normColorCode(r[0]);
+          if(!code) return;
+          const name = normalizeKey(r[5]);
+          const colorName = normalizeKey(r[8]);
+          const qty = toNumber(r[10]);
+          stockMap.set(code, qty);
+          stockInfoMap.set(code, { qty, name, colorName });
+        }
+      });
+    }
+
+    /* ===================== ✅ 발주 데이터(압축 저장 + 인덱스) ===================== */
+    let orderLoaded = false;
+    let orderHeaderMap = new Map();
+
+    // 인덱스: key -> compactRow[]
+    let orderIndexByMall = new Map();
+    let orderIndexBySabang = new Map();
+    let orderIndexByTracking = new Map();
+    let orderIndexByPhone = new Map();
+    // 수령인 contains 검색용: compactRow[] (전체 목록)
+    let orderAllForRecipientScan = [];
+
+    // 발주 compactRow는 "필요 컬럼만" 갖는 객체
+    function compactOrderRow_(rawRow){
+      // EXTRA_COLS B/C/D + OUTPUT_HEADERS 전부
+      const o = {};
+      o["__B"] = rawRow[1] ?? "";
+      o["__C"] = rawRow[2] ?? "";
+      o["__D"] = rawRow[3] ?? "";
+
+      // OUTPUT_HEADERS는 headerMap 기반으로 값 채움
+      for(const h of OUTPUT_HEADERS){
+        if(h === "배송수단"){ o[h] = "택배"; continue; }
+        if(h === "운송장 번호"){ o[h] = ""; continue; }
+        if(h === "상품명"){ // 네 원본 코드가 row[11] 우선이었음
+          o[h] = rawRow[11] || safeGetByHeader_(rawRow, h) || "";
+          continue;
+        }
+        o[h] = safeGetByHeader_(rawRow, h) || "";
+      }
+
+      // 재고/요청일 태그
+      o["재고"] = stockQtyLabel_(o["상품컬러코드"]);
+      o["요청일"] = attachStockToRequestDate_(o["요청일"], o["상품컬러코드"]);
+      return o;
+    }
+
+    function safeGetByHeader_(row, headerName){
+      const idx = orderHeaderMap.get(headerName);
+      if(idx == null || idx < 0) return "";
+      return row[idx] ?? "";
+    }
+
+    function pushIndex_(map, key, item){
+      if(!key) return;
+      if(!map.has(key)) map.set(key, []);
+      map.get(key).push(item);
+    }
+
+    function parseOrderCsvStream_(csvText){
+      return new Promise((resolve, reject)=>{
+        // 초기화
+        orderIndexByMall = new Map();
+        orderIndexBySabang = new Map();
+        orderIndexByTracking = new Map();
+        orderIndexByPhone = new Map();
+        orderAllForRecipientScan = [];
+        orderHeaderMap = new Map();
+
+        let idxMall = 2;     // fallback
+        let idxSabang = 1;   // B열
+        let idxTracking = null;
+        let idxPhone = null;
+        let idxRecipient = null;
+
+        parseCsvStream_(csvText, {
+          onHeader: (header)=>{
+            // headerMap 생성
+            header.forEach((h, i)=>{ if(h) orderHeaderMap.set(h, i); });
+
+            // 쇼핑몰주문번호 열 찾기
+            const m1 = orderHeaderMap.get("쇼핑몰 주문번호(필수)");
+            const m2 = orderHeaderMap.get("쇼핑몰 주문번호");
+            idxMall = (m1 != null) ? m1 : (m2 != null ? m2 : 2);
+
+            idxTracking  = orderHeaderMap.get("운송장 번호");
+            idxPhone     = orderHeaderMap.get("받는분연락처");
+            idxRecipient = orderHeaderMap.get("수령인");
+          },
+          onRow: (rawRow)=>{
+            // 빈행 방지
+            if(!rawRow || rawRow.length < 3) return;
+
+            const compact = compactOrderRow_(rawRow);
+
+            // 인덱스 키들
+            const mall = normalizeOrderNo(rawRow[idxMall]);
+            const sabang = normalizeKey(rawRow[idxSabang]);
+            const trk = (idxTracking != null) ? normLoose_(rawRow[idxTracking]) : "";
+            const ph  = (idxPhone != null) ? normDigits_(rawRow[idxPhone]) : "";
+
+            if(mall) pushIndex_(orderIndexByMall, mall, compact);
+            if(sabang) pushIndex_(orderIndexBySabang, sabang, compact);
+            if(trk) pushIndex_(orderIndexByTracking, trk, compact);
+            if(ph) pushIndex_(orderIndexByPhone, ph, compact);
+
+            // 수령인 contains용 (전체 저장하되, compact만)
+            if(idxRecipient != null){
+              compact.__RECIP = String(rawRow[idxRecipient] ?? "");
+            }else{
+              compact.__RECIP = String(compact["수령인"] ?? "");
+            }
+            orderAllForRecipientScan.push(compact);
+          },
+          onDone: ()=>{
+            orderLoaded = true;
+            resolve();
+          },
+          onError: (e)=> reject(e)
+        });
+      });
+    }
+
+    /* ===================== ✅ 출고 데이터(압축 저장) ===================== */
+    let existLoaded = false;
+
+    // existItem: { sheetTag, reqDate, sabang, mall, purpose, method, colorNm, dateText }
+    let existRows = [];
+    let existIndexBySabang = new Map();
+    let existIndexByMall = new Map();
+
+    function parseExistCsvStream_(csvText, sheetTag){
+      return new Promise((resolve, reject)=>{
+        let headerMap = new Map();
+        let sabangIdx = null, mallIdx = null, dateIdx = null;
+        let reqDateIdx = 0;
+        let purposeIdx = 3;
+        let methodIdx = 4;
+        let colorIdx = 13;
+
+        parseCsvStream_(csvText, {
+          onHeader: (header)=>{
+            header.forEach((h, i)=>{ if(h) headerMap.set(h, i); });
+
+            sabangIdx = headerMap.get("사방넷주문번호") ?? headerMap.get("사방넷 주문번호") ?? null;
+            mallIdx   = headerMap.get("쇼핑몰 주문번호(필수)") ?? headerMap.get("쇼핑몰 주문번호") ?? null;
+            dateIdx   = headerMap.get("기록일") ?? headerMap.get("등록일") ?? headerMap.get("작성일") ?? null;
+
+            // 색상명 컬럼명 대응
+            colorIdx = headerMap.get("상품컬러명(플레이엠디)") ?? headerMap.get("상품컬러명") ?? 13;
+          },
+          onRow: (r)=>{
+            const sabang = normalizeKey(sabangIdx != null ? r[sabangIdx] : "");
+            const mall   = normalizeOrderNo(mallIdx != null ? r[mallIdx] : "");
+            const reqDate = String(r[reqDateIdx] ?? "").trim();
+            const purpose = String(r[purposeIdx] ?? "").trim();
+            const method  = String(r[methodIdx] ?? "").trim();
+            const colorNm = String(r[colorIdx] ?? "").trim();
+            const dt = String(dateIdx != null ? (r[dateIdx] ?? "") : "").trim();
+
+            const item = {
+              sheetTag,
+              reqDate,
+              sabang,
+              mall,
+              purpose,
+              method,
+              colorNm,
+              dateText: dt
+            };
+            existRows.push(item);
+
+            if(sabang){
+              if(!existIndexBySabang.has(sabang)) existIndexBySabang.set(sabang, []);
+              existIndexBySabang.get(sabang).push(item);
+            }
+            if(mall){
+              if(!existIndexByMall.has(mall)) existIndexByMall.set(mall, []);
+              existIndexByMall.get(mall).push(item);
+            }
+          },
+          onDone: ()=>{
+            existLoaded = true;
+            resolve();
+          },
+          onError: (e)=> reject(e)
+        });
+      });
+    }
+
+    /* ===================== ✅ 통합 로더 (캐시 우선 + 백그라운드 갱신) ===================== */
+    let orderExistLoadingPromise = null;
+    let orderExistRefreshingPromise = null;
+
+    async function refreshOrderExistInBackground_(){
+      if(orderExistRefreshingPromise) return orderExistRefreshingPromise;
+
+      orderExistRefreshingPromise = (async ()=>{
+        try{
+          const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
+            fetchCsvSmart(ORDER_CSV_BASE),
+            fetchCsvSmart(EXIST_CSV_BASE_2025),
+            fetchCsvSmart(EXIST_CSV_BASE_2026),
+          ]);
+
+          if(!looksLikeBadCsv(orderCsv)){
+            saveCache_(ORDER_CACHE_KEY, orderCsv);
+            await parseOrderCsvStream_(orderCsv);
+          }
+
+          // 출고는 append이므로, 백그라운드 갱신은 한 번 초기화 후 재빌드
+          if(!looksLikeBadCsv(existCsv2025) || !looksLikeBadCsv(existCsv2026)){
+            existRows = [];
+            existIndexBySabang = new Map();
+            existIndexByMall = new Map();
+          }
+
+          if(!looksLikeBadCsv(existCsv2025)){
+            saveCache_(EXIST_CACHE_KEY_2025, existCsv2025);
+            await parseExistCsvStream_(existCsv2025, "2025");
+          }
+          if(!looksLikeBadCsv(existCsv2026)){
+            saveCache_(EXIST_CACHE_KEY_2026, existCsv2026);
+            await parseExistCsvStream_(existCsv2026, "2026");
+          }
+        }catch(e){
+          console.warn("background refresh failed", e);
+        }finally{
+          orderExistRefreshingPromise = null;
+        }
+      })();
+
+      return orderExistRefreshingPromise;
+    }
+
+    async function ensureOrderAndExistLoaded_(){
+      if(orderLoaded && existLoaded) return;
+      if(orderExistLoadingPromise) return orderExistLoadingPromise;
+
+      orderExistLoadingPromise = (async ()=>{
+        setLoadingUI_(true, "발주/출고 데이터 불러오는 중…");
+
+        try{
+          // 캐시 먼저
+          const cachedOrder = loadCache_(ORDER_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
+          const cachedExist2025 = loadCache_(EXIST_CACHE_KEY_2025, ORDEREXIST_CACHE_TTL_MS);
+          const cachedExist2026 = loadCache_(EXIST_CACHE_KEY_2026, ORDEREXIST_CACHE_TTL_MS);
+
+          if(cachedOrder && !orderLoaded) await parseOrderCsvStream_(cachedOrder);
+
+          if((cachedExist2025 || cachedExist2026) && !existLoaded){
+            existRows = [];
+            existIndexBySabang = new Map();
+            existIndexByMall = new Map();
+          }
+
+          if(cachedExist2025 && !existLoaded) await parseExistCsvStream_(cachedExist2025, "2025");
+          if(cachedExist2026) await parseExistCsvStream_(cachedExist2026, "2026");
+
+          if(orderLoaded && existLoaded){
+            setLoadingUI_(false, "로딩 완료 (캐시)");
+            orderExistLoadingPromise = null;
+            refreshOrderExistInBackground_();
+            return;
+          }
+
+          // 네트워크
+          const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
+            fetchCsvSmart(ORDER_CSV_BASE),
+            fetchCsvSmart(EXIST_CSV_BASE_2025),
+            fetchCsvSmart(EXIST_CSV_BASE_2026),
+          ]);
+
+          if(!looksLikeBadCsv(orderCsv)){
+            saveCache_(ORDER_CACHE_KEY, orderCsv);
+            await parseOrderCsvStream_(orderCsv);
+          }
+
+          existRows = [];
+          existIndexBySabang = new Map();
+          existIndexByMall = new Map();
+
+          if(!looksLikeBadCsv(existCsv2025)){
+            saveCache_(EXIST_CACHE_KEY_2025, existCsv2025);
+            await parseExistCsvStream_(existCsv2025, "2025");
+          }
+          if(!looksLikeBadCsv(existCsv2026)){
+            saveCache_(EXIST_CACHE_KEY_2026, existCsv2026);
+            await parseExistCsvStream_(existCsv2026, "2026");
+          }
+
+          setLoadingUI_(false, "로딩 완료");
+        }catch(e){
+          console.error(e);
+          setLoadingUI_(false, "로드 실패: 시트가 '보기 가능' 공개인지 확인하세요.");
+          throw e;
+        }finally{
+          orderExistLoadingPromise = null;
+        }
+      })();
+
+      return orderExistLoadingPromise;
+    }
+
+    /* ===================== 기존 등록 패널 ===================== */
     function hideExistPanel(){
       const p = $("existPanel");
       if (!p) return;
@@ -961,11 +1249,10 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
 
       const merged = [...rowsByMall, ...rowsBySabang];
 
-      // ✅ 중복 제거 (시트태그+row 시그니처)
       const uniq = [];
       const seen = new Set();
       for(const it of merged){
-        const sig = (it.sheetTag || "") + "::" + (it.row || []).join("\u0001");
+        const sig = (it.sheetTag || "") + "::" + (it.mall || "") + "::" + (it.sabang || "") + "::" + (it.purpose||"") + "::" + (it.method||"") + "::" + (it.reqDate||"");
         if(seen.has(sig)) continue;
         seen.add(sig);
         uniq.push(it);
@@ -982,393 +1269,68 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       $("btnExistToggle").textContent = `펼치기 (${uniq.length}건)`;
 
       $("existTbody").innerHTML = uniq.map(it=>{
-        const r = it.row;
-        const hm = it.headerMap || new Map();
-
-        const sabangIdx = hm.get("사방넷주문번호") ?? hm.get("사방넷 주문번호") ?? null;
-        const mallIdx   = hm.get("쇼핑몰 주문번호(필수)") ?? hm.get("쇼핑몰 주문번호") ?? null;
-        const dateIdx   = hm.get("기록일") ?? hm.get("등록일") ?? hm.get("작성일") ?? null;
-
-        const sabang = safeGet(r, sabangIdx);
-        const mall   = safeGet(r, mallIdx);
-        const purpose = safeGet(r, 3);
-        const method  = safeGet(r, 4);
-        const dt      = safeGet(r, dateIdx);
-
         const sheetTag = it.sheetTag ? ` (${it.sheetTag})` : "";
-
         return `
           <tr>
-            <td>${escapeHtml(sabang)}</td>
-            <td>${escapeHtml(mall)}</td>
-            <td>${escapeHtml(purpose)}</td>
-            <td>${escapeHtml(method)}</td>
-            <td>${escapeHtml(dt)}${escapeHtml(sheetTag)}</td>
+            <td>${escapeHtml(it.sabang || "")}</td>
+            <td>${escapeHtml(it.mall || "")}</td>
+            <td>${escapeHtml(it.purpose || "")}</td>
+            <td>${escapeHtml(it.method || "")}</td>
+            <td>${escapeHtml(it.dateText || it.reqDate || "")}${escapeHtml(sheetTag)}</td>
           </tr>
         `;
       }).join("");
     }
 
-    /* ===================== 🔴 이중출고 매칭 결과(배너용) ===================== */
-    let dupMatchesForTable_ = [];
-
+    /* ===================== DUP 매칭(출고 스캔) ===================== */
     function computeDupMatchesForTable_(needleRaw){
       dupMatchesForTable_ = [];
-
       const q0 = normalizeForContains_(needleRaw);
       if(!q0) return;
       if(!existLoaded || !existRows || existRows.length === 0) return;
 
       for(const it of existRows){
-        const r = it.row;
-        const hm = it.headerMap || new Map();
-
-        const aIdx = 0;
-        const cIdx = hm.get("쇼핑몰 주문번호(필수)") ?? hm.get("쇼핑몰 주문번호") ?? 2;
-        const dIdx = 3;
-        const eIdx = 4;
-        const nIdx = hm.get("상품컬러명(플레이엠디)") ?? hm.get("상품컬러명") ?? 13;
-
-        const d = String(safeGet(r, dIdx) ?? "");
-        const e = String(safeGet(r, eIdx) ?? "");
-        const dNorm = normalizeForContains_(d);
-        const eNorm = normalizeForContains_(e);
-
+        const dNorm = normalizeForContains_(it.purpose || "");
+        const eNorm = normalizeForContains_(it.method || "");
         if(dNorm.includes(q0) || eNorm.includes(q0)){
           dupMatchesForTable_.push({
-            reqDate: String(safeGet(r, aIdx) ?? "").trim(),
-            mallNo:  String(safeGet(r, cIdx) ?? "").trim(),
-            colorNm: String(safeGet(r, nIdx) ?? "").trim(),
-            dText: d.trim(),
-            eText: e.trim(),
+            reqDate: it.reqDate || "",
+            mallNo: it.mall || "",
+            colorNm: it.colorNm || "",
+            dText: it.purpose || "",
+            eText: it.method || "",
             sheetTag: it.sheetTag || ""
           });
         }
       }
     }
 
-    /* ===================== 데이터 저장 (발주서) ===================== */
-    let orderRows = [];
-    let orderIndexByMall = new Map();
-    let orderIndexBySabang = new Map();
-    let orderIndexByTracking = new Map();
-    let orderIndexByPhone = new Map();
-    let orderIndexByRecipientContains = []; // (그때그때 스캔) - 유지용
-
-    /* ===================== 상태 ===================== */
+    /* ===================== 결과/복사/렌더 ===================== */
     let lastOutRows = [];
     let lastStockTypes = [];
     let originalOutRows = [];
     let lastSource = "none";
+    let copyBlocked_ = true;
 
-    /* ===================== 로딩 상태 플래그 ===================== */
-    let stockLoaded = false;
-    let orderLoaded = false;
-    let existLoaded = false;
-    let orderExistLoadingPromise = null;
-    let orderExistRefreshingPromise = null;
-
-    /* ===================== localStorage 캐시 ===================== */
-    const STOCK_CACHE_KEY = "SHIPMENT_STOCK_CSV_CACHE_V1";
-    const STOCK_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4시간
-
-    const ORDER_CACHE_KEY = "SHIPMENT_ORDER_CSV_CACHE_V1";
-
-    const EXIST_CACHE_KEY_2025 = "SHIPMENT_EXIST_CSV_CACHE_2025_V1";
-    const EXIST_CACHE_KEY_2026 = "SHIPMENT_EXIST_CSV_CACHE_2026_V1";
-
-    const ORDEREXIST_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4시간
-
-    function loadCache_(key, ttl){
-      try{
-        const raw = localStorage.getItem(key);
-        if(!raw) return null;
-        const obj = JSON.parse(raw);
-        if(!obj || !obj.csv || !obj.ts) return null;
-        if(Date.now() - obj.ts > ttl) return null;
-        return obj.csv;
-      }catch{ return null; }
-    }
-
-    function saveCache_(key, csv){
-      try{ localStorage.setItem(key, JSON.stringify({ ts: Date.now(), csv })); }catch{}
-    }
-
-    function loadStockCache_(){ return loadCache_(STOCK_CACHE_KEY, STOCK_CACHE_TTL_MS); }
-    function saveStockCache_(csv){ saveCache_(STOCK_CACHE_KEY, csv); }
-
-    /* ===================== 파서 ===================== */
-    function parseCsvWithPapa(csvText, onDone){
-      Papa.parse(csvText, { skipEmptyLines: true, worker: true, complete: (results)=> onDone(results) });
-    }
-
-    /* ===================== 재고 파싱 ===================== */
-    function buildStockMapsFromParsed_(results){
-      const rows = (results.data || []).slice(1).filter(r => r && r.length > 0);
-      stockMap = new Map();
-      stockInfoMap = new Map();
-      for(const r of rows){
-        const code = normColorCode(r[0]);
-        if(!code) continue;
-        const name = normalizeKey(r[5]);      // F
-        const colorName = normalizeKey(r[8]); // I
-        const qty = toNumber(r[10]);          // K
-        stockMap.set(code, qty);
-        stockInfoMap.set(code, { qty, name, colorName });
-      }
-    }
-
-    /* ===================== 발주 파싱 ===================== */
-    function parseOrderCsv_(csvText){
-      return new Promise((resolve)=>{
-        parseCsvWithPapa(csvText, (results)=>{
-          const rows = results.data || [];
-          const header = (rows[0] || []).map(h => normalizeKey(h));
-          headerIndexMap = new Map();
-          header.forEach((h, idx)=>{ if(h) headerIndexMap.set(h, idx); });
-
-          orderRows = rows.slice(1).filter(r => r && r.length > 1);
-          const idxMall = getMatchIndexFromHeader_();
-          const idxSabang = 1;
-
-          orderIndexByMall = new Map();
-          orderIndexBySabang = new Map();
-          orderIndexByTracking = new Map();
-          orderIndexByPhone = new Map();
-
-          const idxTracking  = headerIndexMap.get("운송장 번호");
-          const idxPhone     = headerIndexMap.get("받는분연락처");
-
-          function pushIndex(map, key, row){
-            if(!key) return;
-            if(!map.has(key)) map.set(key, []);
-            map.get(key).push(row);
-          }
-
-          for(const r of orderRows){
-            const mall = normalizeOrderNo(r[idxMall]);
-            const sabang = normalizeKey(r[idxSabang]);
-
-            if(mall) pushIndex(orderIndexByMall, mall, r);
-            if(sabang) pushIndex(orderIndexBySabang, sabang, r);
-
-            if(idxTracking != null){
-              const trk = normLoose_(safeGet(r, idxTracking));
-              if(trk) pushIndex(orderIndexByTracking, trk, r);
-            }
-
-            if(idxPhone != null){
-              const ph = normDigits_(safeGet(r, idxPhone));
-              if(ph) pushIndex(orderIndexByPhone, ph, r);
-            }
-          }
-
-          orderLoaded = true;
-          resolve();
-        });
-      });
-    }
-
-    /* ===================== ✅ 출고 파싱(2025/2026 append) ===================== */
-    function parseExistCsv_(csvText, sheetTag){
-      return new Promise((resolve)=>{
-        parseCsvWithPapa(csvText, (results)=>{
-          const rows = results.data || [];
-          const header = (rows[0] || []).map(h => normalizeKey(h));
-          const headerMap = new Map();
-          header.forEach((h, idx)=>{ if(h) headerMap.set(h, idx); });
-
-          const dataRows = rows.slice(1).filter(r => r && r.length > 1);
-
-          if(!existLoaded){
-            existRows = [];
-            existIndexBySabang = new Map();
-            existIndexByMall = new Map();
-          }
-
-          const sabangIdx = headerMap.get("사방넷주문번호") ?? headerMap.get("사방넷 주문번호") ?? null;
-          const mallIdx   = headerMap.get("쇼핑몰 주문번호(필수)") ?? headerMap.get("쇼핑몰 주문번호") ?? null;
-
-          function pushIndex(map, key, item){
-            if(!key) return;
-            if(!map.has(key)) map.set(key, []);
-            map.get(key).push(item);
-          }
-
-          for(const r of dataRows){
-            const item = { row: r, sheetTag, headerMap };
-            existRows.push(item);
-
-            const sabang = normalizeKey(safeGet(r, sabangIdx));
-            const mall   = normalizeOrderNo(safeGet(r, mallIdx));
-
-            if(sabang) pushIndex(existIndexBySabang, sabang, item);
-            if(mall)   pushIndex(existIndexByMall, mall, item);
-          }
-
-          existLoaded = true;
-          resolve();
-        });
-      });
-    }
-
-    /* ===================== 1) 재고만 먼저 로드 ===================== */
-    async function loadStockOnly(){
-      setLoadingUI_(true, "재고 로딩 중…");
-      $("stat2").textContent = "";
+    function clearResult_(){
+      setPanel("manual", false);
+      setPanel("change", false);
       clearStockUI();
       hideExistPanel();
       hideDupBanner_();
-      setPanel("manual", false);
-      setPanel("change", false);
+      lastOutRows = [];
+      lastStockTypes = [];
+      originalOutRows = [];
+      lastSource = "none";
       copyBlocked_ = true;
-      wireColorSelect_();
-
-      try{
-        const cached = loadStockCache_();
-        if(cached){
-          await new Promise((resolve)=>{
-            parseCsvWithPapa(cached, (results)=>{ buildStockMapsFromParsed_(results); resolve(); });
-          });
-          stockLoaded = true;
-          rebuildColorSelectOptions_();
-          setLoadingUI_(false, "재고 로딩 완료 (캐시)");
-        }
-
-        const stockCsv = await fetchCsvSmart(STOCK_CSV_BASE);
-        if(!looksLikeBadCsv(stockCsv)){
-          saveStockCache_(stockCsv);
-          await new Promise((resolve)=>{
-            parseCsvWithPapa(stockCsv, (results)=>{ buildStockMapsFromParsed_(results); resolve(); });
-          });
-          stockLoaded = true;
-          rebuildColorSelectOptions_();
-          setLoadingUI_(false, "재고 로딩 완료");
-        }else{
-          if(!stockLoaded) setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
-        }
-      }catch(e){
-        console.error(e);
-        if(!stockLoaded) setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
-      }
     }
 
-    /* ===================== ✅ 발주/출고: 캐시 우선 + 백그라운드 갱신 ===================== */
-    async function refreshOrderExistInBackground_(){
-      if(orderExistRefreshingPromise) return orderExistRefreshingPromise;
-
-      orderExistRefreshingPromise = (async ()=>{
-        try{
-          const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
-            fetchCsvSmart(ORDER_CSV_BASE),
-            fetchCsvSmart(EXIST_CSV_BASE_2025),
-            fetchCsvSmart(EXIST_CSV_BASE_2026),
-          ]);
-
-          if(!looksLikeBadCsv(orderCsv)){
-            saveCache_(ORDER_CACHE_KEY, orderCsv);
-            await parseOrderCsv_(orderCsv);
-          }
-          if(!looksLikeBadCsv(existCsv2025)){
-            saveCache_(EXIST_CACHE_KEY_2025, existCsv2025);
-            await parseExistCsv_(existCsv2025, "2025");
-          }
-          if(!looksLikeBadCsv(existCsv2026)){
-            saveCache_(EXIST_CACHE_KEY_2026, existCsv2026);
-            await parseExistCsv_(existCsv2026, "2026");
-          }
-        }catch(e){
-          console.warn("background refresh failed", e);
-        }finally{
-          orderExistRefreshingPromise = null;
-        }
-      })();
-
-      return orderExistRefreshingPromise;
-    }
-
-    async function ensureOrderAndExistLoaded_(){
-      if(orderLoaded && existLoaded) return;
-      if(orderExistLoadingPromise) return orderExistLoadingPromise;
-
-      orderExistLoadingPromise = (async ()=>{
-        setLoadingUI_(true, "발주/출고 데이터 불러오는 중…");
-
-        try{
-          const cachedOrder = loadCache_(ORDER_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
-          const cachedExist2025 = loadCache_(EXIST_CACHE_KEY_2025, ORDEREXIST_CACHE_TTL_MS);
-          const cachedExist2026 = loadCache_(EXIST_CACHE_KEY_2026, ORDEREXIST_CACHE_TTL_MS);
-
-          if(cachedOrder && !orderLoaded) await parseOrderCsv_(cachedOrder);
-          if(cachedExist2025 && !existLoaded) await parseExistCsv_(cachedExist2025, "2025");
-          if(cachedExist2026) await parseExistCsv_(cachedExist2026, "2026");
-
-          if(orderLoaded && existLoaded){
-            setLoadingUI_(false, "로딩 완료 (캐시)");
-            orderExistLoadingPromise = null;
-            refreshOrderExistInBackground_();
-            return;
-          }
-
-          const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
-            fetchCsvSmart(ORDER_CSV_BASE),
-            fetchCsvSmart(EXIST_CSV_BASE_2025),
-            fetchCsvSmart(EXIST_CSV_BASE_2026),
-          ]);
-
-          if(!looksLikeBadCsv(orderCsv)){
-            saveCache_(ORDER_CACHE_KEY, orderCsv);
-            await parseOrderCsv_(orderCsv);
-          }
-          if(!looksLikeBadCsv(existCsv2025)){
-            saveCache_(EXIST_CACHE_KEY_2025, existCsv2025);
-            await parseExistCsv_(existCsv2025, "2025");
-          }
-          if(!looksLikeBadCsv(existCsv2026)){
-            saveCache_(EXIST_CACHE_KEY_2026, existCsv2026);
-            await parseExistCsv_(existCsv2026, "2026");
-          }
-
-          setLoadingUI_(false, "로딩 완료");
-        }catch(e){
-          console.error(e);
-          setLoadingUI_(false, "로드 실패: 시트가 '보기 가능' 공개인지 확인하세요.");
-          throw e;
-        }finally{
-          orderExistLoadingPromise = null;
-        }
-      })();
-
-      return orderExistLoadingPromise;
-    }
-
-    /* ===================== out row 생성 ===================== */
-    function buildOutFromSheetRow(row){
-      const o = {};
-      for(const c of EXTRA_COLS){
-        o[c.key] = safeGet(row, c.idx);
-      }
-      for(const h of OUTPUT_HEADERS){
-        if(h === "배송수단"){ o[h] = "택배"; continue; }
-        if(h === "운송장 번호"){ o[h] = ""; continue; }
-        if(h === "상품명"){ o[h] = safeGet(row, 11) || ""; continue; }
-        if(h === "재고"){ o[h] = ""; continue; }
-        const idx = headerIndexMap.get(h);
-        o[h] = safeGet(row, idx);
-      }
-      o["재고"] = stockQtyLabel_(o["상품컬러코드"]);
-      o["요청일"] = attachStockToRequestDate_(o["요청일"], o["상품컬러코드"]);
-      return o;
-    }
-
-    /* ===================== 체크된 행 인덱스 ===================== */
     function getCheckedIndexes_(){
       const wrap = $("tableWrap");
       const chks = wrap.querySelectorAll("input.rowChk:checked");
       return Array.from(chks).map(c => Number(c.dataset.idx)).filter(n => !Number.isNaN(n));
     }
 
-    /* ===================== 툴바 ===================== */
     function updateToolbar_(){
       const tb = $("tableToolbar");
       if(!tb) return;
@@ -1405,12 +1367,10 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       updateCopyGateBySelection_();
     });
 
-    /* ===================== ✅ 셀 호버 미리보기(오버레이) ===================== */
+    // hover tip
     let hoverTipEl = null;
     let hoverTipActive = false;
-
     function initHoverTip_(){ hoverTipEl = $("hoverTip"); }
-
     function showHoverTip_(text, clientX, clientY){
       if(!hoverTipEl) return;
       const t = String(text ?? "").trim();
@@ -1422,21 +1382,14 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
     }
     function moveHoverTip_(clientX, clientY){
       if(!hoverTipEl || !hoverTipActive) return;
-      const pad = 14;
-      const offset = 14;
-      hoverTipEl.style.left = "0px";
-      hoverTipEl.style.top = "0px";
+      const pad = 14, offset = 14;
+      hoverTipEl.style.left = "0px"; hoverTipEl.style.top = "0px";
       const rect = hoverTipEl.getBoundingClientRect();
       let x = clientX + offset;
       let y = clientY + offset;
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if(x + rect.width + pad > vw){
-        x = Math.max(pad, vw - rect.width - pad);
-      }
-      if(y + rect.height + pad > vh){
-        y = Math.max(pad, clientY - rect.height - offset);
-      }
+      const vw = window.innerWidth, vh = window.innerHeight;
+      if(x + rect.width + pad > vw) x = Math.max(pad, vw - rect.width - pad);
+      if(y + rect.height + pad > vh) y = Math.max(pad, clientY - rect.height - offset);
       hoverTipEl.style.left = `${x}px`;
       hoverTipEl.style.top = `${y}px`;
     }
@@ -1446,7 +1399,6 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       hoverTipActive = false;
     }
 
-    /* ===================== 렌더 ===================== */
     function renderTable(outRows, stockTypes){
       const wrap = $("tableWrap");
       lastOutRows = outRows || [];
@@ -1461,14 +1413,12 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
         return;
       }
 
-      const showCheckbox = true;
-
       let html = `
         <table>
           <thead>
             <tr>
-              <th style="min-width:48px;">#</th>
-              <th style="min-width:64px;">선택</th>
+              <th style="min-width:20px;">#</th>
+              <th style="min-width:30px;">선택</th>
               ${TABLE_COLS_VIEW.map(c=>{
                 const w = COL_WIDTH[c.label] || COL_WIDTH["_default"];
                 return `<th style="min-width:${w}px; max-width:${w}px;">${escapeHtml(c.label)}</th>`;
@@ -1484,9 +1434,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
         html += `
           <tr class="${trClass}" data-idx="${i}">
             <td class="copy" data-copy="${i+1}">${i+1}</td>
-            <td class="chkcell">
-              ${showCheckbox ? `<input type="checkbox" class="rowChk" data-idx="${i}">` : ``}
-            </td>
+            <td class="chkcell"><input type="checkbox" class="rowChk" data-idx="${i}"></td>
             ${TABLE_COLS_VIEW.map(c=>{
               const v = o[c.key] ?? "";
               const w = COL_WIDTH[c.label] || COL_WIDTH["_default"];
@@ -1542,13 +1490,8 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       });
     }
 
-    /* ===================== TSV/HTML 복사 (숨긴 열도 포함) ===================== */
     function buildTSV(outRows){
-      const INCLUDE_HEADER_ROW = false;
       const lines = [];
-      if(INCLUDE_HEADER_ROW){
-        lines.push(TABLE_COLS_COPY.map(c => c.label).join("\t"));
-      }
       outRows.forEach(o=>{
         const vals = TABLE_COLS_COPY.map(c =>
           String(o[c.key] ?? "").replace(/\t/g," ").replace(/\r?\n/g," ")
@@ -1590,17 +1533,14 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       }
     }
 
-    /* ===================== ✅ 드래그 선택된 행 감지 ===================== */
     function getSelectedRowIndexesByDrag_(){
       const wrap = $("tableWrap");
       const sel = window.getSelection?.();
       if(!wrap || !sel || sel.rangeCount === 0) return [];
-
       const anchorNode = sel.anchorNode;
       const focusNode = sel.focusNode;
       const inWrap = (n)=> n && (wrap === n || wrap.contains(n));
       if(!inWrap(anchorNode) && !inWrap(focusNode)) return [];
-
       const range = sel.getRangeAt(0);
       const rows = Array.from(wrap.querySelectorAll("tbody tr[data-idx]"));
       const idxs = [];
@@ -1624,13 +1564,38 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       return false;
     }
 
-    /* ===================== ✅ Ctrl+C: 체크 우선 -> 드래그 행 -> 전체 ===================== */
+    function getCopyTargetIndexes_(){
+      if(!lastOutRows || lastOutRows.length === 0) return [];
+      const checked = getCheckedIndexes_();
+      return (checked && checked.length) ? checked : lastOutRows.map((_, i)=>i);
+    }
+
+    function gateCopyByTypes(types){
+      let out=0, low=0, na=0, ok=0;
+      for(const t of types){
+        if(t === "out") out++;
+        else if(t === "low") low++;
+        else if(t === "na") na++;
+        else ok++;
+      }
+      copyBlocked_ = (out > 0 || low > 0 || na > 0);
+    }
+
+    function updateCopyGateBySelection_(){
+      if(!lastOutRows || lastOutRows.length === 0){
+        copyBlocked_ = true;
+        return;
+      }
+      const idxs = getCopyTargetIndexes_();
+      const types = idxs.map(i => stockStatusByColorCode(lastOutRows[i]["상품컬러코드"]).type);
+      gateCopyByTypes(types);
+    }
+
     async function shortcutCopy_(){
       if(!lastOutRows || lastOutRows.length === 0){
         showToast("복사할 결과 없음");
         return;
       }
-
       updateCopyGateBySelection_();
       if(copyBlocked_){
         showToast("재고 경고로 복사 차단됨");
@@ -1650,7 +1615,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       await writeClipboardRows_(rowsToCopy);
     }
 
-    /* ===================== 수동 입력(out row) ===================== */
+    /* ===================== 수동 입력 ===================== */
     function buildOutManual(colorCode, qty){
       const o = {};
       for(const c of EXTRA_COLS) o[c.key] = "";
@@ -1665,127 +1630,6 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       return o;
     }
 
-    /* ===================== 검색 ===================== */
-    async function search(){
-      const inputRaw = $("orderInput").value;
-      const qKey = normalizeKey(inputRaw);
-      const qMall = normalizeOrderNo(inputRaw);
-      const qLoose = normLoose_(inputRaw);
-      const qDigits = normDigits_(inputRaw);
-
-      setPanel("manual", false);
-      setPanel("change", false);
-      clearStockUI();
-      hideExistPanel();
-      hideDupBanner_();
-      lastOutRows = [];
-      lastStockTypes = [];
-      originalOutRows = [];
-      lastSource = "none";
-      copyBlocked_ = true;
-
-      if(!qKey){
-        $("tableWrap").innerHTML = `<div class="no-data">검색어를 입력해주세요.</div>`;
-        updateToolbar_();
-        hideHoverTip_();
-        return;
-      }
-      if(!stockLoaded){
-        $("status").textContent = "로딩 중";
-        return;
-      }
-
-      if(!orderLoaded || !existLoaded){
-        try{
-          await ensureOrderAndExistLoaded_();
-        }catch{
-          $("status").textContent = "발주/출고 로드 실패 (수동 입력 가능)";
-          setPanel("manual", true);
-          $("tableWrap").innerHTML =
-            `<div class="no-data">발주서/출고 시트를 불러오지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
-          updateToolbar_();
-          hideHoverTip_();
-          return;
-        }
-      }
-
-      // ✅ (중요) 검색 전 "출고시트(2025+2026) 중복 포함검색" → 배너 표시
-      computeDupMatchesForTable_(inputRaw);
-      renderDupBanner_();
-
-      /* =========================================================
-         ✅ 요구사항 2) 검색어 매칭:
-           - 사방넷주문번호 (정확)
-           - 쇼핑몰 주문번호(필수) (정확)
-           - 운송장 (정확/느슨정규화)
-           - 수령인 (부분 포함)
-           - 받는분연락처 (숫자만 정확)
-         → 매칭된 행 전부 합쳐서 노출
-         ========================================================= */
-
-      let picked = [];
-
-      // 1) 쇼핑몰 주문번호(정확)
-      picked = picked.concat(orderIndexByMall.get(qMall) || []);
-
-      // 2) 사방넷주문번호(정확)
-      picked = picked.concat(orderIndexBySabang.get(qKey) || []);
-
-      // 3) 운송장 번호(정확, 느슨정규화)
-      picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
-
-      // 4) 받는분연락처(정확, 숫자만)
-      if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
-
-      // 5) 수령인(부분 포함 검색)
-      const idxRecipient = headerIndexMap.get("수령인");
-      if(idxRecipient != null && qKey.length >= 1){
-        const hit = orderRows.filter(r => String(safeGet(r, idxRecipient)).includes(qKey));
-        picked = picked.concat(hit);
-      }
-
-      // ✅ 중복 제거
-      const seen = new Set();
-      const rows = [];
-      for(const r of picked){
-        const sig = r.join("\u0001");
-        if(seen.has(sig)) continue;
-        seen.add(sig);
-        rows.push(r);
-      }
-
-      $("status").textContent = rows.length ? `검색 결과: ${rows.length.toLocaleString()}건` : "검색 결과 없음 (수동 입력 가능)";
-
-      if(rows.length === 0){
-        // 여기서는 입력이 주문번호가 아닐 수도 있으니, 기존등록 패널은 “그대로(쇼핑몰주문번호 기준)” 보이게 하고 싶으면 유지
-        // 입력값이 실제 주문번호일 때만 제대로 뜨지만, 요구사항은 그대로 유지라서 호출은 유지.
-        showExistPanelByOrderNo_(qMall);
-        setPanel("manual", true);
-        $("tableWrap").innerHTML =
-          `<div class="no-data">발주서에서 일치 항목을 찾지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
-        updateToolbar_();
-        hideHoverTip_();
-        return;
-      }
-
-      const outRows = rows.map(r => buildOutFromSheetRow(r));
-      const stockTypes = outRows.map(o => stockStatusByColorCode(o["상품컬러코드"]).type);
-
-      lastSource = "sheet";
-      originalOutRows = JSON.parse(JSON.stringify(outRows));
-      renderTable(outRows, stockTypes);
-
-      // 기존 등록 패널은 "쇼핑몰 주문번호" 기반으로 보는 용도라서,
-      // 검색어가 다른 값(송장/연락처/수령인)일 수 있어도 일단 기존처럼 유지.
-      showExistPanelByOrderNo_(qMall);
-
-      setPanel("change", true);
-      $("changeColor").value = normalizeKey(outRows[0]["상품컬러코드"] || "");
-      $("changeQty").value = normalizeKey(outRows[0]["수량"] || "");
-      refreshColorDropdownByCurrentRows_();
-    }
-
-    /* ===================== 수동 입력 ===================== */
     function applyManual(){
       const color = normalizeKey($("manualColor").value);
       const qty = normalizeKey($("manualQty").value);
@@ -1835,8 +1679,6 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
           copy["상품명"] = nameFromStock_(newColor);
           copy["요청일"] = attachStockToRequestDate_(copy["요청일"], newColor);
           copy["옵션(수집)"] = colorNameFromStock_(newColor);
-        }else{
-          if(copy["재고"] === "") copy["재고"] = stockQtyLabel_(copy["상품컬러코드"]);
         }
         return copy;
       });
@@ -1857,7 +1699,101 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       showToast("변경 취소됨");
     }
 
-    /* ===================== EXIST 토글 버튼 ===================== */
+    /* ===================== ✅ 검색 ===================== */
+    async function search(){
+      const inputRaw = $("orderInput").value;
+      const qKey = normalizeKey(inputRaw);
+      const qMall = normalizeOrderNo(inputRaw);
+      const qLoose = normLoose_(inputRaw);
+      const qDigits = normDigits_(inputRaw);
+
+      clearResult_();
+
+      if(!qKey){
+        $("tableWrap").innerHTML = `<div class="no-data">검색어를 입력해주세요.</div>`;
+        updateToolbar_();
+        hideHoverTip_();
+        return;
+      }
+      if(!stockLoaded){
+        $("status").textContent = "재고 로딩 중…";
+        return;
+      }
+
+      if(!orderLoaded || !existLoaded){
+        try{
+          await ensureOrderAndExistLoaded_();
+        }catch{
+          $("status").textContent = "발주/출고 로드 실패 (수동 입력 가능)";
+          setPanel("manual", true);
+          $("tableWrap").innerHTML =
+            `<div class="no-data">발주서/출고 시트를 불러오지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
+          updateToolbar_();
+          hideHoverTip_();
+          return;
+        }
+      }
+
+      // ✅ (1) 발주 결과 먼저: 인덱스로 즉시 검색
+      let picked = [];
+      picked = picked.concat(orderIndexByMall.get(qMall) || []);
+      picked = picked.concat(orderIndexBySabang.get(qKey) || []);
+      picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
+      if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
+
+      // 수령인 contains (전체 scan이지만 compact라서 이전보다 덜 무거움)
+      if(qKey.length >= 1){
+        const hit = orderAllForRecipientScan.filter(o => String(o.__RECIP || "").includes(qKey));
+        picked = picked.concat(hit);
+      }
+
+      // 중복 제거
+      const seen = new Set();
+      const outRows = [];
+      for(const o of picked){
+        // compact row는 JSON stringify가 부담이라, 안정적 시그니처로:
+        const sig = (o["__B"]||"") + "|" + (o["__C"]||"") + "|" + (o["상품컬러코드"]||"") + "|" + (o["요청일"]||"") + "|" + (o["수량"]||"");
+        if(seen.has(sig)) continue;
+        seen.add(sig);
+        outRows.push(o);
+      }
+
+      $("status").textContent = outRows.length ? `검색 결과: ${outRows.length.toLocaleString()}건` : "검색 결과 없음 (수동 입력 가능)";
+
+      if(outRows.length === 0){
+        setPanel("manual", true);
+        $("tableWrap").innerHTML =
+          `<div class="no-data">발주서에서 일치 항목을 찾지 못했습니다.<br/>아래에서 <strong>상품컬러코드</strong>를 입력하면 재고 확인 후 결과 테이블을 만들 수 있어요.</div>`;
+        updateToolbar_();
+        hideHoverTip_();
+        return;
+      }
+
+      const stockTypes = outRows.map(o => stockStatusByColorCode(o["상품컬러코드"]).type);
+      lastSource = "sheet";
+      originalOutRows = JSON.parse(JSON.stringify(outRows));
+      renderTable(outRows, stockTypes);
+
+      setPanel("change", true);
+      $("changeColor").value = normalizeKey(outRows[0]["상품컬러코드"] || "");
+      $("changeQty").value = normalizeKey(outRows[0]["수량"] || "");
+      refreshColorDropdownByCurrentRows_();
+
+      // ✅ (2) 출고 검토는 뒤로 미뤄서 체감 속도 개선
+      setTimeout(()=>{
+        try{
+          computeDupMatchesForTable_(inputRaw);
+          renderDupBanner_();
+        }catch(e){ console.warn(e); }
+
+        try{
+          // 기존등록 패널은 쇼핑몰주문번호 기반이 제일 정확
+          showExistPanelByOrderNo_(qMall);
+        }catch(e){ console.warn(e); }
+      }, 0);
+    }
+
+    /* ===================== EXIST 토글 ===================== */
     $("btnExistToggle").addEventListener("click", ()=>{
       const body = $("existBody");
       const isOpen = body.style.display !== "none";
@@ -1865,7 +1801,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       $("btnExistToggle").textContent = isOpen ? "펼치기" : "접기";
     });
 
-    /* ===================== ✅ Ctrl+C 전역 단축키 복사 ===================== */
+    /* ===================== Ctrl+C ===================== */
     document.addEventListener("keydown", async (e)=>{
       const key = (e.key || "").toLowerCase();
       if(!e.ctrlKey || e.altKey || e.metaKey) return;
@@ -1885,7 +1821,6 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       $("manualQty").value = "";
       $("changeColor").value = "";
       $("changeQty").value = "";
-
       const sel = $("changeColorSelect");
       if(sel) sel.value = "";
 
@@ -1907,7 +1842,7 @@ const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
       hideHoverTip_();
     }
 
-    /* ===================== 검색/버튼 이벤트 ===================== */
+    /* ===================== 이벤트 ===================== */
     $("orderInput").addEventListener("keydown", (e)=>{
       if(e.key === "Enter") search();
     });
