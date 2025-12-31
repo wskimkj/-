@@ -433,13 +433,18 @@
     const STOCK_SHEET_URL_VIEW = "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/edit?gid=366983013#gid=366983013";
     const STOCK_CSV_BASE = "https://docs.google.com/spreadsheets/d/1_L12NKkBVU4c5xDPrYLUQRnSUG2NoAwYGWIfPDVO3bM/export?format=csv&gid=366983013";
 
-    // 출고 시트
-    const EXIST_SHEET_URL_VIEW = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/edit?gid=0#gid=0";
-    const EXIST_CSV_BASE = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/export?format=csv&gid=0";
+    // ✅ 출고 시트 2개 (기존/2026)
+    const EXIST_SHEET_URL_VIEW_2025 = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/edit?gid=0#gid=0";
+    const EXIST_CSV_BASE_2025 = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/export?format=csv&gid=0";
+
+    const EXIST_SHEET_URL_VIEW_2026 = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/edit?gid=883501265#gid=883501265";
+    const EXIST_CSV_BASE_2026 = "https://docs.google.com/spreadsheets/d/1LPy69E2yPTaSwxFAYrX6qV0BZx1tW0YdonLRNqeo5Vc/export?format=csv&gid=883501265";
 
     document.getElementById("orderLink").href = ORDER_SHEET_URL_VIEW;
     document.getElementById("stockLink").href = STOCK_SHEET_URL_VIEW;
-    document.getElementById("existLink").href = EXIST_SHEET_URL_VIEW;
+
+    // 링크는 최신(2026)로 걸어둠 (원하면 2025/2026 두 개로 UI 추가 가능)
+    document.getElementById("existLink").href = EXIST_SHEET_URL_VIEW_2026;
 
     /* ===================== ✅ ESC: 전체 초기화 ===================== */
     document.addEventListener("keydown", (e)=>{
@@ -630,7 +635,7 @@
       }
 
       const count = dupMatchesForTable_.length;
-      $("dupBannerSub").textContent = `출고 시트에 같은 검색어가 포함된 기록이 ${count}건 있어요.`;
+      $("dupBannerSub").textContent = `출고 시트(2025/2026)에 같은 검색어가 포함된 기록이 ${count}건 있어요.`;
 
       const items = dupMatchesForTable_.slice(0, 12);
       const more = count - items.length;
@@ -638,6 +643,7 @@
       $("dupBannerDetail").innerHTML =
         items.map(m => {
           const line1 = [
+            m.sheetTag ? `시트: ${m.sheetTag}` : "",
             m.mallNo ? `주문번호: ${m.mallNo}` : "",
             m.reqDate ? `요청일: ${m.reqDate}` : "",
             m.colorNm ? `상품컬러명: ${m.colorNm}` : ""
@@ -917,10 +923,10 @@
     }
 
     /* ===================== 기존 데이터(목적/처리) ===================== */
+    // ✅ existRows는 여러 시트 합침: { row:[...], sheetTag:"2025"|"2026", headerMap:Map }
     let existRows = [];
-    let existHeaderMap = new Map();
-    let existIndexBySabang = new Map();
-    let existIndexByMall = new Map();
+    let existIndexBySabang = new Map(); // key -> item[]
+    let existIndexByMall = new Map();   // key -> item[]
 
     function hideExistPanel(){
       const p = $("existPanel");
@@ -945,13 +951,15 @@
       const rowsBySabang = sabangKeys.flatMap(k => existIndexBySabang.get(k) || []);
 
       const merged = [...rowsByMall, ...rowsBySabang];
+
+      // ✅ 중복 제거 (시트태그+row 시그니처)
       const uniq = [];
       const seen = new Set();
-      for(const r of merged){
-        const sig = JSON.stringify(r);
+      for(const it of merged){
+        const sig = (it.sheetTag || "") + "::" + (it.row || []).join("\u0001");
         if(seen.has(sig)) continue;
         seen.add(sig);
-        uniq.push(r);
+        uniq.push(it);
       }
 
       if(uniq.length === 0){
@@ -964,23 +972,29 @@
       $("existBody").style.display = "none";
       $("btnExistToggle").textContent = `펼치기 (${uniq.length}건)`;
 
-      const sabangIdx = existHeaderMap.get("사방넷주문번호") ?? existHeaderMap.get("사방넷 주문번호") ?? null;
-      const mallIdx = existHeaderMap.get("쇼핑몰 주문번호(필수)") ?? existHeaderMap.get("쇼핑몰 주문번호") ?? null;
-      const dateIdx = existHeaderMap.get("기록일") ?? existHeaderMap.get("등록일") ?? existHeaderMap.get("작성일") ?? null;
+      $("existTbody").innerHTML = uniq.map(it=>{
+        const r = it.row;
+        const hm = it.headerMap || new Map();
 
-      $("existTbody").innerHTML = uniq.map(r=>{
+        const sabangIdx = hm.get("사방넷주문번호") ?? hm.get("사방넷 주문번호") ?? null;
+        const mallIdx   = hm.get("쇼핑몰 주문번호(필수)") ?? hm.get("쇼핑몰 주문번호") ?? null;
+        const dateIdx   = hm.get("기록일") ?? hm.get("등록일") ?? hm.get("작성일") ?? null;
+
         const sabang = safeGet(r, sabangIdx);
-        const mall = safeGet(r, mallIdx);
+        const mall   = safeGet(r, mallIdx);
         const purpose = safeGet(r, 3);
-        const method = safeGet(r, 4);
-        const dt = safeGet(r, dateIdx);
+        const method  = safeGet(r, 4);
+        const dt      = safeGet(r, dateIdx);
+
+        const sheetTag = it.sheetTag ? ` (${it.sheetTag})` : "";
+
         return `
           <tr>
             <td>${escapeHtml(sabang)}</td>
             <td>${escapeHtml(mall)}</td>
             <td>${escapeHtml(purpose)}</td>
             <td>${escapeHtml(method)}</td>
-            <td>${escapeHtml(dt)}</td>
+            <td>${escapeHtml(dt)}${escapeHtml(sheetTag)}</td>
           </tr>
         `;
       }).join("");
@@ -989,7 +1003,7 @@
     /* ===================== 🔴 이중출고 매칭 결과(배너용) ===================== */
     let dupMatchesForTable_ = [];
 
-    // ✅ 출고 시트에서 검색어가 "포함"된 기록을 찾아서 dupMatchesForTable_에 저장
+    // ✅ 출고 시트(2025+2026)에서 검색어가 "포함"된 기록을 찾아서 dupMatchesForTable_에 저장
     function computeDupMatchesForTable_(needleRaw){
       dupMatchesForTable_ = [];
 
@@ -997,32 +1011,34 @@
       if(!q0) return;
       if(!existLoaded || !existRows || existRows.length === 0) return;
 
-      // A열(요청일): 0 고정
-      const aIdx = 0;
+      for(const it of existRows){
+        const r = it.row;
+        const hm = it.headerMap || new Map();
 
-      // C열(쇼핑몰 주문번호): 헤더로 찾고, 없으면 2
-      const cIdx =
-        existHeaderMap.get("쇼핑몰 주문번호(필수)") ??
-        existHeaderMap.get("쇼핑몰 주문번호") ??
-        2;
+        // A열(요청일): 0 고정
+        const aIdx = 0;
 
-      // D/E: 너 코드 기준 목적/전산 처리방법
-      const dIdx = 3;
-      const eIdx = 4;
+        // C열(쇼핑몰 주문번호)
+        const cIdx =
+          hm.get("쇼핑몰 주문번호(필수)") ??
+          hm.get("쇼핑몰 주문번호") ??
+          2;
 
-      // N열(상품컬러명(플레이엠디)): 헤더로 찾고, 없으면 13
-      const nIdx =
-        existHeaderMap.get("상품컬러명(플레이엠디)") ??
-        existHeaderMap.get("상품컬러명") ??
-        13;
+        // D/E: 목적/전산 처리방법
+        const dIdx = 3;
+        const eIdx = 4;
 
-      for(const r of existRows){
+        // N열(상품컬러명(플레이엠디))
+        const nIdx =
+          hm.get("상품컬러명(플레이엠디)") ??
+          hm.get("상품컬러명") ??
+          13;
+
         const d = String(safeGet(r, dIdx) ?? "");
         const e = String(safeGet(r, eIdx) ?? "");
         const dNorm = normalizeForContains_(d);
         const eNorm = normalizeForContains_(e);
 
-        // ✅ 검색어도 normalizeForContains_로 맞춰서 비교 (과학적 표기/공백 깨짐 방어)
         if(dNorm.includes(q0) || eNorm.includes(q0)){
           dupMatchesForTable_.push({
             reqDate: String(safeGet(r, aIdx) ?? "").trim(),
@@ -1030,6 +1046,7 @@
             colorNm: String(safeGet(r, nIdx) ?? "").trim(),
             dText: d.trim(),
             eText: e.trim(),
+            sheetTag: it.sheetTag || ""
           });
         }
       }
@@ -1061,7 +1078,11 @@
     const STOCK_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4시간
 
     const ORDER_CACHE_KEY = "SHIPMENT_ORDER_CSV_CACHE_V1";
-    const EXIST_CACHE_KEY = "SHIPMENT_EXIST_CSV_CACHE_V1";
+
+    // ✅ 출고 캐시 키 2개
+    const EXIST_CACHE_KEY_2025 = "SHIPMENT_EXIST_CSV_CACHE_2025_V1";
+    const EXIST_CACHE_KEY_2026 = "SHIPMENT_EXIST_CSV_CACHE_2026_V1";
+
     const ORDEREXIST_CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4시간
 
     function loadCache_(key, ttl){
@@ -1103,7 +1124,7 @@
       }
     }
 
-    /* ===================== 발주/출고 파싱 ===================== */
+    /* ===================== 발주 파싱 ===================== */
     function parseOrderCsv_(csvText){
       return new Promise((resolve)=>{
         parseCsvWithPapa(csvText, (results)=>{
@@ -1161,34 +1182,44 @@
       });
     }
 
-    function parseExistCsv_(csvText){
+    /* ===================== ✅ 출고 파싱(2025/2026 append) ===================== */
+    function parseExistCsv_(csvText, sheetTag){
       return new Promise((resolve)=>{
         parseCsvWithPapa(csvText, (results)=>{
           const rows = results.data || [];
           const header = (rows[0] || []).map(h => normalizeKey(h));
-          existHeaderMap = new Map();
-          header.forEach((h, idx)=>{ if(h) existHeaderMap.set(h, idx); });
+          const headerMap = new Map();
+          header.forEach((h, idx)=>{ if(h) headerMap.set(h, idx); });
 
-          existRows = rows.slice(1).filter(r => r && r.length > 1);
+          const dataRows = rows.slice(1).filter(r => r && r.length > 1);
 
-          existIndexBySabang = new Map();
-          existIndexByMall = new Map();
-
-          const sabangIdx = existHeaderMap.get("사방넷주문번호") ?? existHeaderMap.get("사방넷 주문번호") ?? null;
-          const mallIdx = existHeaderMap.get("쇼핑몰 주문번호(필수)") ?? existHeaderMap.get("쇼핑몰 주문번호") ?? null;
-
-          for(const r of existRows){
-            const sabang = normalizeKey(safeGet(r, sabangIdx));
-            const mall = normalizeOrderNo(safeGet(r, mallIdx));
-            if(sabang){
-              if(!existIndexBySabang.has(sabang)) existIndexBySabang.set(sabang, []);
-              existIndexBySabang.get(sabang).push(r);
-            }
-            if(mall){
-              if(!existIndexByMall.has(mall)) existIndexByMall.set(mall, []);
-              existIndexByMall.get(mall).push(r);
-            }
+          // 첫 로드면 초기화
+          if(!existLoaded){
+            existRows = [];
+            existIndexBySabang = new Map();
+            existIndexByMall = new Map();
           }
+
+          const sabangIdx = headerMap.get("사방넷주문번호") ?? headerMap.get("사방넷 주문번호") ?? null;
+          const mallIdx   = headerMap.get("쇼핑몰 주문번호(필수)") ?? headerMap.get("쇼핑몰 주문번호") ?? null;
+
+          function pushIndex(map, key, item){
+            if(!key) return;
+            if(!map.has(key)) map.set(key, []);
+            map.get(key).push(item);
+          }
+
+          for(const r of dataRows){
+            const item = { row: r, sheetTag, headerMap };
+            existRows.push(item);
+
+            const sabang = normalizeKey(safeGet(r, sabangIdx));
+            const mall   = normalizeOrderNo(safeGet(r, mallIdx));
+
+            if(sabang) pushIndex(existIndexBySabang, sabang, item);
+            if(mall)   pushIndex(existIndexByMall, mall, item);
+          }
+
           existLoaded = true;
           resolve();
         });
@@ -1214,7 +1245,7 @@
             parseCsvWithPapa(cached, (results)=>{ buildStockMapsFromParsed_(results); resolve(); });
           });
           stockLoaded = true;
-          rebuildColorSelectOptions_();
+          rebuildColorSelectOptions_(); // allowAll
           setLoadingUI_(false, "재고 로딩 완료 (캐시)");
         }
 
@@ -1225,7 +1256,7 @@
             parseCsvWithPapa(stockCsv, (results)=>{ buildStockMapsFromParsed_(results); resolve(); });
           });
           stockLoaded = true;
-          rebuildColorSelectOptions_();
+          rebuildColorSelectOptions_(); // allowAll
           setLoadingUI_(false, "재고 로딩 완료");
         }else{
           if(!stockLoaded) setLoadingUI_(false, "재고 로드 실패: 시트 공개(보기 가능) 확인");
@@ -1242,18 +1273,23 @@
 
       orderExistRefreshingPromise = (async ()=>{
         try{
-          const [orderCsv, existCsv] = await Promise.all([
+          const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
             fetchCsvSmart(ORDER_CSV_BASE),
-            fetchCsvSmart(EXIST_CSV_BASE),
+            fetchCsvSmart(EXIST_CSV_BASE_2025),
+            fetchCsvSmart(EXIST_CSV_BASE_2026),
           ]);
 
           if(!looksLikeBadCsv(orderCsv)){
             saveCache_(ORDER_CACHE_KEY, orderCsv);
             await parseOrderCsv_(orderCsv);
           }
-          if(!looksLikeBadCsv(existCsv)){
-            saveCache_(EXIST_CACHE_KEY, existCsv);
-            await parseExistCsv_(existCsv);
+          if(!looksLikeBadCsv(existCsv2025)){
+            saveCache_(EXIST_CACHE_KEY_2025, existCsv2025);
+            await parseExistCsv_(existCsv2025, "2025");
+          }
+          if(!looksLikeBadCsv(existCsv2026)){
+            saveCache_(EXIST_CACHE_KEY_2026, existCsv2026);
+            await parseExistCsv_(existCsv2026, "2026");
           }
         }catch(e){
           console.warn("background refresh failed", e);
@@ -1274,10 +1310,13 @@
 
         try{
           const cachedOrder = loadCache_(ORDER_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
-          const cachedExist = loadCache_(EXIST_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
+          const cachedExist2025 = loadCache_(EXIST_CACHE_KEY_2025, ORDEREXIST_CACHE_TTL_MS);
+          const cachedExist2026 = loadCache_(EXIST_CACHE_KEY_2026, ORDEREXIST_CACHE_TTL_MS);
 
           if(cachedOrder && !orderLoaded) await parseOrderCsv_(cachedOrder);
-          if(cachedExist && !existLoaded) await parseExistCsv_(cachedExist);
+          // exist는 2개 모두 append 가능
+          if(cachedExist2025 && !existLoaded) await parseExistCsv_(cachedExist2025, "2025");
+          if(cachedExist2026) await parseExistCsv_(cachedExist2026, "2026");
 
           if(orderLoaded && existLoaded){
             setLoadingUI_(false, "로딩 완료 (캐시)");
@@ -1286,18 +1325,23 @@
             return;
           }
 
-          const [orderCsv, existCsv] = await Promise.all([
+          const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
             fetchCsvSmart(ORDER_CSV_BASE),
-            fetchCsvSmart(EXIST_CSV_BASE),
+            fetchCsvSmart(EXIST_CSV_BASE_2025),
+            fetchCsvSmart(EXIST_CSV_BASE_2026),
           ]);
 
           if(!looksLikeBadCsv(orderCsv)){
             saveCache_(ORDER_CACHE_KEY, orderCsv);
             await parseOrderCsv_(orderCsv);
           }
-          if(!looksLikeBadCsv(existCsv)){
-            saveCache_(EXIST_CACHE_KEY, existCsv);
-            await parseExistCsv_(existCsv);
+          if(!looksLikeBadCsv(existCsv2025)){
+            saveCache_(EXIST_CACHE_KEY_2025, existCsv2025);
+            await parseExistCsv_(existCsv2025, "2025");
+          }
+          if(!looksLikeBadCsv(existCsv2026)){
+            saveCache_(EXIST_CACHE_KEY_2026, existCsv2026);
+            await parseExistCsv_(existCsv2026, "2026");
           }
 
           setLoadingUI_(false, "로딩 완료");
@@ -1677,7 +1721,7 @@
         }
       }
 
-      // ✅ (중요) 발주서 검색 전에 먼저 "출고시트 중복" 체크 → 배너 표시
+      // ✅ (중요) 발주서 검색 전에 먼저 "출고시트(2025+2026) 중복" 체크 → 배너 표시
       computeDupMatchesForTable_(orderNoRaw);
       renderDupBanner_();
 
