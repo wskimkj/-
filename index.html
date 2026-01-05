@@ -291,6 +291,32 @@
       flex-wrap:wrap;
     }
 
+    /* ✅ 엑셀식 열 너비 드래그 */
+#tableWrap th{
+  position: sticky; /* 이미 sticky 사용중이면 그대로 */
+  user-select: none;
+}
+
+#tableWrap th .col-resizer{
+  position:absolute;
+  top:0;
+  right:-4px;
+  width:8px;
+  height:100%;
+  cursor: col-resize;
+  z-index: 5;
+}
+
+#tableWrap th.resizing{
+  cursor: col-resize;
+}
+
+body.col-resize-active{
+  cursor: col-resize !important;
+  user-select:none !important;
+}
+
+
     /* ✅ 결과 테이블(하단)만: 폰트 1px 감소 + 행 높이 조절(패딩 변수 적용) */
     #tableWrap table{
       font-size: var(--table-font);
@@ -1485,6 +1511,10 @@
         td.addEventListener("mousemove", (e)=> moveHoverTip_(e.clientX, e.clientY));
         td.addEventListener("mouseleave", hideHoverTip_);
       });
+      enableExcelLikeResize_();
+
+
+      
     }
 
     function buildTSV(outRows){
@@ -1834,6 +1864,112 @@
       updateToolbar_();
       hideHoverTip_();
     }
+
+    /* ===================== ✅ 엑셀식 열 리사이즈 ===================== */
+// 컬럼 라벨별로 너비 저장 (렌더링 다시 해도 유지)
+let colWidthOverride = {}; // { "상품명": 260, "수령인": 120, ... }
+
+// 최소/최대 너비
+const COL_MIN_W = 40;
+const COL_MAX_W = 600;
+
+// 현재 저장된 너비 적용해서 가져오기
+function getColWidth_(label){
+  const saved = colWidthOverride[label];
+  if(saved != null) return saved;
+  return COL_WIDTH[label] || COL_WIDTH["_default"] || 60;
+}
+
+// th/td에 폭 적용
+function applyColWidthToTable_(tableEl, colIndex, px){
+  const w = Math.max(COL_MIN_W, Math.min(COL_MAX_W, px));
+
+  // thead
+  const ths = tableEl.querySelectorAll("thead th");
+  if(ths[colIndex]){
+    ths[colIndex].style.minWidth = w + "px";
+    ths[colIndex].style.maxWidth = w + "px";
+    ths[colIndex].style.width = w + "px";
+  }
+
+  // tbody cells
+  tableEl.querySelectorAll("tbody tr").forEach(tr=>{
+    const tds = tr.querySelectorAll("td");
+    if(tds[colIndex]){
+      tds[colIndex].style.minWidth = w + "px";
+      tds[colIndex].style.maxWidth = w + "px";
+      tds[colIndex].style.width = w + "px";
+    }
+  });
+}
+
+// 렌더링 후 th에 리사이즈 핸들 붙이기
+function enableExcelLikeResize_(){
+  const wrap = $("tableWrap");
+  const table = wrap?.querySelector("table");
+  if(!table) return;
+
+  const ths = table.querySelectorAll("thead th");
+  // 현재 테이블의 컬럼 라벨 배열(보이는 컬럼 기준)
+  // 지금 구조: 0:#, 1:선택, 2부터 TABLE_COLS_VIEW 라벨들
+  const labels = ["#", "선택", ...TABLE_COLS_VIEW.map(c=>c.label)];
+
+  // 1) 저장된 폭(th/td)에 먼저 반영
+  labels.forEach((label, idx)=>{
+    const w = getColWidth_(label);
+    applyColWidthToTable_(table, idx, w);
+  });
+
+  // 2) 핸들 부착(중복 방지)
+  ths.forEach((th, idx)=>{
+    if(th.querySelector(".col-resizer")) return; // 이미 있으면 패스
+    th.style.position = "sticky"; // 혹시 모를 보호(이미 sticky여도 OK)
+    th.style.position = "sticky";
+    th.style.top = "0"; // sticky 헤더 유지
+
+    const handle = document.createElement("div");
+    handle.className = "col-resizer";
+    th.appendChild(handle);
+
+    let startX = 0;
+    let startW = 0;
+    let isResizing = false;
+
+    const onMove = (e)=>{
+      if(!isResizing) return;
+      const dx = e.clientX - startX;
+      const nextW = startW + dx;
+      applyColWidthToTable_(table, idx, nextW);
+
+      // 저장 (라벨 기준)
+      const label = labels[idx] || `COL_${idx}`;
+      colWidthOverride[label] = Math.max(COL_MIN_W, Math.min(COL_MAX_W, nextW));
+    };
+
+    const onUp = ()=>{
+      if(!isResizing) return;
+      isResizing = false;
+      document.body.classList.remove("col-resize-active");
+      th.classList.remove("resizing");
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+
+    handle.addEventListener("mousedown", (e)=>{
+      e.preventDefault();
+      e.stopPropagation(); // 클릭 복사 같은 것 방지
+      isResizing = true;
+      startX = e.clientX;
+      startW = th.getBoundingClientRect().width;
+
+      document.body.classList.add("col-resize-active");
+      th.classList.add("resizing");
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    });
+  });
+}
+
 
     /* ===================== 이벤트 ===================== */
     $("orderInput").addEventListener("keydown", (e)=>{
