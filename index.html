@@ -35,6 +35,11 @@
       --ok-text: rgba(47,42,58,.92);
 
       --pink:#ff8fbc;
+
+      /* ✅ 결과 테이블 전용(요청사항) */
+      --table-font: 11px;   /* 결과 테이블 폰트: 12px -> 11px */
+      --row-pad-y: 10px;    /* 결과 테이블 행 높이(세로 패딩) */
+      --row-pad-x: 12px;
     }
     *{box-sizing:border-box;font-family:"Pretendard",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
     body{
@@ -285,6 +290,17 @@
       gap:10px;
       flex-wrap:wrap;
     }
+
+    /* ✅ 결과 테이블(하단)만: 폰트 1px 감소 + 행 높이 조절(패딩 변수 적용) */
+    #tableWrap table{
+      font-size: var(--table-font);
+    }
+    #tableWrap thead th{
+      padding: var(--row-pad-y) var(--row-pad-x);
+    }
+    #tableWrap tbody td{
+      padding: var(--row-pad-y) var(--row-pad-x);
+    }
   </style>
 </head>
 
@@ -327,16 +343,6 @@
           <button class="btn" id="btnExistToggle" type="button">펼치기</button>
 
           <div id="existBody" style="display:none; width:100%;">
-            <div class="toolbar" id="tableToolbar" style="display:none;">
-              <span class="hint">
-                행 클릭하면 복사 · 여러 건이면 체크 후 <span class="kbd">변경</span> 적용 ·
-                <span class="kbd">Ctrl</span>+<span class="kbd">C</span> 로 복사
-              </span>
-              <span id="selCount" class="badge ok" style="display:none;">선택 0건</span>
-              <button class="btn" id="btnSelectAll" type="button" style="display:none;">전체 선택</button>
-              <button class="btn" id="btnSelectNone" type="button" style="display:none;">선택 해제</button>
-            </div>
-
             <div class="table-wrap" style="max-height:240px; width:100%; margin-top:8px;">
               <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:12px;">
                 <thead>
@@ -402,6 +408,25 @@
           <button class="btn" id="btnChangeReset">취소</button>
         </div>
 
+        <!-- ✅ 결과 테이블 전용 툴바(행 높이 조절 추가) -->
+        <div class="toolbar" id="tableToolbar" style="display:none;">
+          <span class="hint">
+            행 클릭하면 복사 · 여러 건이면 체크 후 <span class="kbd">변경</span> 적용 ·
+            <span class="kbd">Ctrl</span>+<span class="kbd">C</span> 로 복사
+          </span>
+
+          <span id="selCount" class="badge ok" style="display:none;">선택 0건</span>
+          <button class="btn" id="btnSelectAll" type="button" style="display:none;">전체 선택</button>
+          <button class="btn" id="btnSelectNone" type="button" style="display:none;">선택 해제</button>
+
+          <!-- ✅ 행 높이 조절 -->
+          <div class="miniinput" style="width:260px;">
+            <span style="font-size:11px;opacity:.75;">행 높이</span>
+            <input id="rowHeightRange" type="range" min="6" max="18" step="1" value="10" style="width:140px;">
+            <span id="rowHeightVal" class="badge ok">10</span>
+          </div>
+        </div>
+
         <div class="table-wrap" id="tableWrap">
           <div class="no-data">검색 결과가 없습니다.</div>
         </div>
@@ -456,13 +481,10 @@
     ];
 
     /* ===================== 화면 숨김/복사 제외 규칙 ===================== */
-    // 요구사항: 노출 추가(운송장/연락처), 숨김(바코드/상품코드)
     const HIDE_IN_VIEW = new Set([
       "배송메세지","큐텐(한글상품명)","큐텐바코드","쇼핑몰(참고용)","상품명(수집)","비고","주문자명",
       "받는분 기타연락처","주소","배송수단","바코드","상품코드"
     ]);
-
-
 
     const TABLE_COLS_ALL = [
       { key: "요청일", label: "요청일" },
@@ -472,7 +494,7 @@
         .filter(h => !["요청일","수령인"].includes(h))
         .map(h => ({ key:h, label:h }))
     ];
-const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(단 값만 바꿀 거니까)
+    const TABLE_COLS_COPY = TABLE_COLS_ALL;
     const TABLE_COLS_VIEW = TABLE_COLS_ALL.filter(c => !HIDE_IN_VIEW.has(c.label));
 
     const COL_WIDTH = {
@@ -751,6 +773,16 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
       el.classList.toggle("show", !!on);
     }
 
+    /* ===================== ✅ 결과 테이블 행 높이(슬라이더) ===================== */
+    function setRowPadY_(v){
+      const n = Math.max(0, Number(v) || 0);
+      document.documentElement.style.setProperty("--row-pad-y", `${n}px`);
+      const badge = $("rowHeightVal");
+      if(badge) badge.textContent = String(n);
+    }
+    $("rowHeightRange")?.addEventListener("input", (e)=> setRowPadY_(e.target.value));
+    setRowPadY_($("rowHeightRange")?.value || 10);
+
     /* ===================== DUP 배너 ===================== */
     let dupMatchesForTable_ = [];
     function hideDupBanner_(){
@@ -834,17 +866,12 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
     function saveStockCache_(csv){ saveCache_(STOCK_CACHE_KEY, csv); }
 
     /* ===================== ✅ 스트리밍 파서 (step) ===================== */
-    function parseCsvStream_(csvText, {
-      onHeader,
-      onRow,
-      onDone,
-      onError
-    }){
+    function parseCsvStream_(csvText, { onHeader, onRow, onDone, onError }){
       let headerDone = false;
 
       Papa.parse(csvText, {
         skipEmptyLines: true,
-        worker: false,         // step/abort 안정성 위해 false
+        worker: false,
         step: (results, parser)=>{
           const row = results.data;
           if(!row || row.length === 0) return;
@@ -862,12 +889,8 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             onError?.(e);
           }
         },
-        complete: ()=>{
-          onDone?.();
-        },
-        error: (err)=>{
-          onError?.(err);
-        }
+        complete: ()=>{ onDone?.(); },
+        error: (err)=>{ onError?.(err); }
       });
     }
 
@@ -917,7 +940,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
       parseCsvStream_(csvText, {
         onHeader: (h)=>{ header = h; },
         onRow: (r)=>{
-          // 기존 로직과 동일(열 위치 가정): A=0, F=5, I=8, K=10
           const code = normColorCode(r[0]);
           if(!code) return;
           const name = normalizeKey(r[5]);
@@ -933,33 +955,27 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
     let orderLoaded = false;
     let orderHeaderMap = new Map();
 
-    // 인덱스: key -> compactRow[]
     let orderIndexByMall = new Map();
     let orderIndexBySabang = new Map();
     let orderIndexByTracking = new Map();
     let orderIndexByPhone = new Map();
-    // 수령인 contains 검색용: compactRow[] (전체 목록)
     let orderAllForRecipientScan = [];
 
-    // 발주 compactRow는 "필요 컬럼만" 갖는 객체
     function compactOrderRow_(rawRow){
-      // EXTRA_COLS B/C/D + OUTPUT_HEADERS 전부
       const o = {};
       o["__B"] = rawRow[1] ?? "";
       o["__C"] = rawRow[2] ?? "";
       o["__D"] = rawRow[3] ?? "";
 
-      // OUTPUT_HEADERS는 headerMap 기반으로 값 채움
       for(const h of OUTPUT_HEADERS){
         if(h === "배송수단"){ o[h] = "택배"; continue; }
-        if(h === "상품명"){ // 네 원본 코드가 row[11] 우선이었음
+        if(h === "상품명"){
           o[h] = rawRow[11] || safeGetByHeader_(rawRow, h) || "";
           continue;
         }
         o[h] = safeGetByHeader_(rawRow, h) || "";
       }
 
-      // 재고/요청일 태그
       o["재고"] = stockQtyLabel_(o["상품컬러코드"]);
       o["요청일"] = attachStockToRequestDate_(o["요청일"], o["상품컬러코드"]);
       return o;
@@ -979,7 +995,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
 
     function parseOrderCsvStream_(csvText){
       return new Promise((resolve, reject)=>{
-        // 초기화
         orderIndexByMall = new Map();
         orderIndexBySabang = new Map();
         orderIndexByTracking = new Map();
@@ -987,18 +1002,16 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
         orderAllForRecipientScan = [];
         orderHeaderMap = new Map();
 
-        let idxMall = 2;     // fallback
-        let idxSabang = 1;   // B열
+        let idxMall = 2;
+        let idxSabang = 1;
         let idxTracking = null;
         let idxPhone = null;
         let idxRecipient = null;
 
         parseCsvStream_(csvText, {
           onHeader: (header)=>{
-            // headerMap 생성
             header.forEach((h, i)=>{ if(h) orderHeaderMap.set(h, i); });
 
-            // 쇼핑몰주문번호 열 찾기
             const m1 = orderHeaderMap.get("쇼핑몰 주문번호(필수)");
             const m2 = orderHeaderMap.get("쇼핑몰 주문번호");
             idxMall = (m1 != null) ? m1 : (m2 != null ? m2 : 2);
@@ -1008,12 +1021,10 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             idxRecipient = orderHeaderMap.get("수령인");
           },
           onRow: (rawRow)=>{
-            // 빈행 방지
             if(!rawRow || rawRow.length < 3) return;
 
             const compact = compactOrderRow_(rawRow);
 
-            // 인덱스 키들
             const mall = normalizeOrderNo(rawRow[idxMall]);
             const sabang = normalizeKey(rawRow[idxSabang]);
             const trk = (idxTracking != null) ? normLoose_(rawRow[idxTracking]) : "";
@@ -1024,7 +1035,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             if(trk) pushIndex_(orderIndexByTracking, trk, compact);
             if(ph) pushIndex_(orderIndexByPhone, ph, compact);
 
-            // 수령인 contains용 (전체 저장하되, compact만)
             if(idxRecipient != null){
               compact.__RECIP = String(rawRow[idxRecipient] ?? "");
             }else{
@@ -1044,7 +1054,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
     /* ===================== ✅ 출고 데이터(압축 저장) ===================== */
     let existLoaded = false;
 
-    // existItem: { sheetTag, reqDate, sabang, mall, purpose, method, colorNm, dateText }
     let existRows = [];
     let existIndexBySabang = new Map();
     let existIndexByMall = new Map();
@@ -1066,7 +1075,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             mallIdx   = headerMap.get("쇼핑몰 주문번호(필수)") ?? headerMap.get("쇼핑몰 주문번호") ?? null;
             dateIdx   = headerMap.get("기록일") ?? headerMap.get("등록일") ?? headerMap.get("작성일") ?? null;
 
-            // 색상명 컬럼명 대응
             colorIdx = headerMap.get("상품컬러명(플레이엠디)") ?? headerMap.get("상품컬러명") ?? 13;
           },
           onRow: (r)=>{
@@ -1078,16 +1086,7 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             const colorNm = String(r[colorIdx] ?? "").trim();
             const dt = String(dateIdx != null ? (r[dateIdx] ?? "") : "").trim();
 
-            const item = {
-              sheetTag,
-              reqDate,
-              sabang,
-              mall,
-              purpose,
-              method,
-              colorNm,
-              dateText: dt
-            };
+            const item = { sheetTag, reqDate, sabang, mall, purpose, method, colorNm, dateText: dt };
             existRows.push(item);
 
             if(sabang){
@@ -1128,7 +1127,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             await parseOrderCsvStream_(orderCsv);
           }
 
-          // 출고는 append이므로, 백그라운드 갱신은 한 번 초기화 후 재빌드
           if(!looksLikeBadCsv(existCsv2025) || !looksLikeBadCsv(existCsv2026)){
             existRows = [];
             existIndexBySabang = new Map();
@@ -1161,7 +1159,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
         setLoadingUI_(true, "발주/출고 데이터 불러오는 중…");
 
         try{
-          // 캐시 먼저
           const cachedOrder = loadCache_(ORDER_CACHE_KEY, ORDEREXIST_CACHE_TTL_MS);
           const cachedExist2025 = loadCache_(EXIST_CACHE_KEY_2025, ORDEREXIST_CACHE_TTL_MS);
           const cachedExist2026 = loadCache_(EXIST_CACHE_KEY_2026, ORDEREXIST_CACHE_TTL_MS);
@@ -1184,7 +1181,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
             return;
           }
 
-          // 네트워크
           const [orderCsv, existCsv2025, existCsv2026] = await Promise.all([
             fetchCsvSmart(ORDER_CSV_BASE),
             fetchCsvSmart(EXIST_CSV_BASE_2025),
@@ -1244,7 +1240,6 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
         }
       }
       const rowsBySabang = sabangKeys.flatMap(k => existIndexBySabang.get(k) || []);
-
       const merged = [...rowsByMall, ...rowsBySabang];
 
       const uniq = [];
@@ -1321,6 +1316,8 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
       originalOutRows = [];
       lastSource = "none";
       copyBlocked_ = true;
+      updateToolbar_();
+      hideHoverTip_();
     }
 
     function getCheckedIndexes_(){
@@ -1332,8 +1329,10 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
     function updateToolbar_(){
       const tb = $("tableToolbar");
       if(!tb) return;
+
       const hasRows = lastOutRows && lastOutRows.length > 0;
       tb.style.display = hasRows ? "flex" : "none";
+
       const showBulk = hasRows && lastOutRows.length > 1;
       $("btnSelectAll").style.display = showBulk ? "" : "none";
       $("btnSelectNone").style.display = showBulk ? "" : "none";
@@ -1365,7 +1364,7 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
       updateCopyGateBySelection_();
     });
 
-    // hover tip
+    /* hover tip */
     let hoverTipEl = null;
     let hoverTipActive = false;
     function initHoverTip_(){ hoverTipEl = $("hoverTip"); }
@@ -1488,30 +1487,29 @@ const TABLE_COLS_COPY = TABLE_COLS_ALL; // copy 컬럼 = view 컬럼과 동일(�
       });
     }
 
-function buildTSV(outRows){
-  const lines = [];
-  outRows.forEach(o=>{
-    const vals = TABLE_COLS_COPY.map(c => {
-      const v = (c.key === "운송장 번호") ? "" : String(o[c.key] ?? "");
-      return v.replace(/\t/g," ").replace(/\r?\n/g," ");
-    });
-    lines.push(vals.join("\t"));
-  });
-  return lines.join("\n");
-}
+    function buildTSV(outRows){
+      const lines = [];
+      outRows.forEach(o=>{
+        const vals = TABLE_COLS_COPY.map(c => {
+          const v = (c.key === "운송장 번호") ? "" : String(o[c.key] ?? "");
+          return v.replace(/\t/g," ").replace(/\r?\n/g," ");
+        });
+        lines.push(vals.join("\t"));
+      });
+      return lines.join("\n");
+    }
 
-function buildHTMLTable(outRows){
-  const tdStyle = "border:1px solid #eee;padding:6px 8px;text-align:center;vertical-align:middle;";
-  const tbody = outRows.map(o => {
-    const tds = TABLE_COLS_COPY.map(c => {
-      const v = (c.key === "운송장 번호") ? "" : String(o[c.key] ?? "");
-      return `<td style="${tdStyle}">${escapeHtml(v)}</td>`;
-    }).join("");
-    return `<tr>${tds}</tr>`;
-  }).join("");
-  return `<table style="border-collapse:collapse;"><tbody>${tbody}</tbody></table>`.trim();
-}
-
+    function buildHTMLTable(outRows){
+      const tdStyle = "border:1px solid #eee;padding:6px 8px;text-align:center;vertical-align:middle;";
+      const tbody = outRows.map(o => {
+        const tds = TABLE_COLS_COPY.map(c => {
+          const v = (c.key === "운송장 번호") ? "" : String(o[c.key] ?? "");
+          return `<td style="${tdStyle}">${escapeHtml(v)}</td>`;
+        }).join("");
+        return `<tr>${tds}</tr>`;
+      }).join("");
+      return `<table style="border-collapse:collapse;"><tbody>${tbody}</tbody></table>`.trim();
+    }
 
     async function writeClipboardRows_(rowsToCopy){
       const tsv = buildTSV(rowsToCopy);
@@ -1735,24 +1733,20 @@ function buildHTMLTable(outRows){
         }
       }
 
-      // ✅ (1) 발주 결과 먼저: 인덱스로 즉시 검색
       let picked = [];
       picked = picked.concat(orderIndexByMall.get(qMall) || []);
       picked = picked.concat(orderIndexBySabang.get(qKey) || []);
       picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
       if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
 
-      // 수령인 contains (전체 scan이지만 compact라서 이전보다 덜 무거움)
       if(qKey.length >= 1){
         const hit = orderAllForRecipientScan.filter(o => String(o.__RECIP || "").includes(qKey));
         picked = picked.concat(hit);
       }
 
-      // 중복 제거
       const seen = new Set();
       const outRows = [];
       for(const o of picked){
-        // compact row는 JSON stringify가 부담이라, 안정적 시그니처로:
         const sig = (o["__B"]||"") + "|" + (o["__C"]||"") + "|" + (o["상품컬러코드"]||"") + "|" + (o["요청일"]||"") + "|" + (o["수량"]||"");
         if(seen.has(sig)) continue;
         seen.add(sig);
@@ -1780,7 +1774,6 @@ function buildHTMLTable(outRows){
       $("changeQty").value = normalizeKey(outRows[0]["수량"] || "");
       refreshColorDropdownByCurrentRows_();
 
-      // ✅ (2) 출고 검토는 뒤로 미뤄서 체감 속도 개선
       setTimeout(()=>{
         try{
           computeDupMatchesForTable_(inputRaw);
@@ -1788,7 +1781,6 @@ function buildHTMLTable(outRows){
         }catch(e){ console.warn(e); }
 
         try{
-          // 기존등록 패널은 쇼핑몰주문번호 기반이 제일 정확
           showExistPanelByOrderNo_(qMall);
         }catch(e){ console.warn(e); }
       }, 0);
