@@ -1992,24 +1992,7 @@ function enableExcelLikeResize_(){
     });
   });
 }
-
-
-    /* ===================== 이벤트 ===================== */
-    $("orderInput").addEventListener("keydown", (e)=>{
-      if(e.key === "Enter") search();
-    });
-    $("btnManualApply").addEventListener("click", applyManual);
-    $("btnChangeApply").addEventListener("click", applyChange);
-    $("btnChangeReset").addEventListener("click", resetChange);
-
-    /* ===================== 시작 ===================== */
-    initHoverTip_();
-    loadStockOnly();
-  </script>
-</body>
-</html>
 <!-- ===================== PATCH: Mall Order Loose & Prefix Search ===================== -->
-<script>
 /* Loose normalize: remove spaces/_/- and lower */
 function __mallLoose(v){
   return String(v ?? "").replace(/[\s_\-]/g,"").toLowerCase();
@@ -2065,4 +2048,19 @@ function __mallDigits(v){
     return _origSearch();
   }
 })();
-</script>
+
+    /* ===================== 이벤트 ===================== */
+    $("orderInput").addEventListener("keydown", (e)=>{
+      if(e.key === "Enter") search();
+    });
+    $("btnManualApply").addEventListener("click", applyManual);
+    $("btnChangeApply").addEventListener("click", applyChange);
+    $("btnChangeReset").addEventListener("click", resetChange);
+
+    /* ===================== 시작 ===================== */
+    initHoverTip_();
+    loadStockOnly();
+  </script>
+</body>
+</html>
+
