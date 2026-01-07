@@ -641,6 +641,25 @@ body.col-resize-active{
         .replaceAll("'","&#039;");
     }
 
+    // ✅ 포함검색(부분일치) 대상 필드
+const CONTAINS_FIELDS = [
+  "__RECIP",      // 수령인(정규화 저장)
+  "상품명",
+  "옵션(수집)",
+  "주소"
+];
+
+// ✅ 한 행에서 부분일치 검사
+function matchContainsInRow_(row, qKey){
+  if(!qKey) return false;
+  for(const k of CONTAINS_FIELDS){
+    const v = normalizeKey(row?.[k] ?? "");
+    if(v && v.includes(qKey)) return true;
+  }
+  return false;
+}
+
+
     /* ===================== 로딩 UI ===================== */
     function setLoadingUI_(on, msg){
       const st = $("status");
@@ -1061,12 +1080,13 @@ body.col-resize-active{
             if(trk) pushIndex_(orderIndexByTracking, trk, compact);
             if(ph) pushIndex_(orderIndexByPhone, ph, compact);
 
-            if(idxRecipient != null){
-              compact.__RECIP = String(rawRow[idxRecipient] ?? "");
-            }else{
-              compact.__RECIP = String(compact["수령인"] ?? "");
-            }
-            orderAllForRecipientScan.push(compact);
+           if(idxRecipient != null){
+  compact.__RECIP = normalizeKey(rawRow[idxRecipient] ?? "");
+}else{
+  compact.__RECIP = normalizeKey(compact["수령인"] ?? "");
+}
+orderAllForRecipientScan.push(compact);
+
           },
           onDone: ()=>{
             orderLoaded = true;
@@ -1769,10 +1789,13 @@ body.col-resize-active{
       picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
       if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
 
-      if(qKey.length >= 1){
-        const hit = orderAllForRecipientScan.filter(o => String(o.__RECIP || "").includes(qKey));
-        picked = picked.concat(hit);
-      }
+      // ✅ 포함검색(수령인/상품명/옵션/주소) 확장
+// 너무 짧은 검색어(1글자)는 결과가 너무 많아질 수 있어 2글자부터 추천
+if(qKey.length >= 2){
+  const hit = orderAllForRecipientScan.filter(o => matchContainsInRow_(o, qKey));
+  picked = picked.concat(hit);
+}
+
 
       const seen = new Set();
       const outRows = [];
