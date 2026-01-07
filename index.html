@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -641,25 +642,6 @@ body.col-resize-active{
         .replaceAll("'","&#039;");
     }
 
-    // ✅ 포함검색(부분일치) 대상 필드
-const CONTAINS_FIELDS = [
-  "__RECIP",      // 수령인(정규화 저장)
-  "상품명",
-  "옵션(수집)",
-  "주소"
-];
-
-// ✅ 한 행에서 부분일치 검사
-function matchContainsInRow_(row, qKey){
-  if(!qKey) return false;
-  for(const k of CONTAINS_FIELDS){
-    const v = normalizeKey(row?.[k] ?? "");
-    if(v && v.includes(qKey)) return true;
-  }
-  return false;
-}
-
-
     /* ===================== 로딩 UI ===================== */
     function setLoadingUI_(on, msg){
       const st = $("status");
@@ -1080,13 +1062,12 @@ function matchContainsInRow_(row, qKey){
             if(trk) pushIndex_(orderIndexByTracking, trk, compact);
             if(ph) pushIndex_(orderIndexByPhone, ph, compact);
 
-           if(idxRecipient != null){
-  compact.__RECIP = normalizeKey(rawRow[idxRecipient] ?? "");
-}else{
-  compact.__RECIP = normalizeKey(compact["수령인"] ?? "");
-}
-orderAllForRecipientScan.push(compact);
-
+            if(idxRecipient != null){
+              compact.__RECIP = String(rawRow[idxRecipient] ?? "");
+            }else{
+              compact.__RECIP = String(compact["수령인"] ?? "");
+            }
+            orderAllForRecipientScan.push(compact);
           },
           onDone: ()=>{
             orderLoaded = true;
@@ -1789,13 +1770,10 @@ orderAllForRecipientScan.push(compact);
       picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
       if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
 
-      // ✅ 포함검색(수령인/상품명/옵션/주소) 확장
-// 너무 짧은 검색어(1글자)는 결과가 너무 많아질 수 있어 2글자부터 추천
-if(qKey.length >= 2){
-  const hit = orderAllForRecipientScan.filter(o => matchContainsInRow_(o, qKey));
-  picked = picked.concat(hit);
-}
-
+      if(qKey.length >= 1){
+        const hit = orderAllForRecipientScan.filter(o => String(o.__RECIP || "").includes(qKey));
+        picked = picked.concat(hit);
+      }
 
       const seen = new Set();
       const outRows = [];
@@ -1992,62 +1970,7 @@ function enableExcelLikeResize_(){
     });
   });
 }
-<!-- ===================== PATCH: Mall Order Loose & Prefix Search ===================== -->
-/* Loose normalize: remove spaces/_/- and lower */
-function __mallLoose(v){
-  return String(v ?? "").replace(/[\s_\-]/g,"").toLowerCase();
-}
-/* Digits only */
-function __mallDigits(v){
-  return String(v ?? "").replace(/[^0-9]/g,"");
-}
 
-/* Build additional indexes after orders parsed */
-(function(){
-  const _origParse = parseOrderCsvStream_;
-  parseOrderCsvStream_ = async function(csv){
-    await _origParse(csv);
-    window.__orderIndexByMallLoose = new Map();
-    window.__orderAllForMallScan = [];
-    orderIndexByMall.forEach((arr, mall)=>{
-      const loose = __mallLoose(mall);
-      if(loose){
-        if(!window.__orderIndexByMallLoose.has(loose)) window.__orderIndexByMallLoose.set(loose, []);
-        window.__orderIndexByMallLoose.get(loose).push(...arr);
-      }
-      arr.forEach(o=>{
-        o.__MALL_DIGITS = __mallDigits(o["__C"] || "");
-        window.__orderAllForMallScan.push(o);
-      });
-    });
-  }
-})();
-
-/* Hook search: add loose equality + digit prefix */
-(function(){
-  const _origSearch = window.search;
-  window.search = async function(){
-    const q = (document.getElementById("orderInput")?.value || "").trim();
-    const qLoose = __mallLoose(q);
-    const qDigits = __mallDigits(q);
-    let results = [];
-    // exact
-    results = results.concat(orderIndexByMall.get(q) || []);
-    // loose
-    if(window.__orderIndexByMallLoose){
-      results = results.concat(window.__orderIndexByMallLoose.get(qLoose) || []);
-    }
-    // prefix digits (min 6)
-    if(qDigits && qDigits.length >= 6 && window.__orderAllForMallScan){
-      results = results.concat(window.__orderAllForMallScan.filter(o=> (o.__MALL_DIGITS||"").startsWith(qDigits)));
-    }
-    if(results.length){
-      renderTable(results, results.map(o=> stockStatusByColorCode(o["상품컬러코드"]).type));
-      return;
-    }
-    return _origSearch();
-  }
-})();
 
     /* ===================== 이벤트 ===================== */
     $("orderInput").addEventListener("keydown", (e)=>{
@@ -2063,4 +1986,3 @@ function __mallDigits(v){
   </script>
 </body>
 </html>
-
