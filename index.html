@@ -1764,16 +1764,79 @@ body.col-resize-active{
         }
       }
 
-      let picked = [];
-      picked = picked.concat(orderIndexByMall.get(qMall) || []);
-      picked = picked.concat(orderIndexBySabang.get(qKey) || []);
-      picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
-      if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
+      function rowMatchesPartial_(o, qKey, qLoose, qDigits){
+  // qKey: 원문 기반(공백 제거 전), qLoose: 공백/하이픈 제거, qDigits: 숫자만
+  if(!o) return false;
 
-      if(qKey.length >= 1){
-        const hit = orderAllForRecipientScan.filter(o => String(o.__RECIP || "").includes(qKey));
-        picked = picked.concat(hit);
-      }
+  const fields = [
+    o["__B"],                 // 사방넷주문번호
+    o["__C"],                 // 쇼핑몰 주문번호
+    o["운송장 번호"],
+    o["받는분연락처"],
+    o["받는분 기타연락처"],
+    o["수령인"],
+    o["상품명"],
+    o["상품컬러코드"],
+    o["옵션(수집)"],
+    o["주소"],                // (compact에 있으면)
+  ];
+
+  // 1) 텍스트 포함(느슨하게)
+  if(qKey){
+    const q = String(qKey);
+    for(const f of fields){
+      const s = String(f ?? "");
+      if(s.includes(q)) return true;
+    }
+  }
+
+  // 2) 공백/하이픈 제거한 포함
+  if(qLoose){
+    const q = String(qLoose);
+    for(const f of fields){
+      const s = String(f ?? "");
+      if(normLoose_(s).includes(q)) return true;
+    }
+  }
+
+  // 3) 숫자만 포함(연락처/송장/주문번호 등에 강함)
+  if(qDigits){
+    const q = String(qDigits);
+    for(const f of fields){
+      const s = String(f ?? "");
+      const d = normDigits_(s);
+      if(d && d.includes(q)) return true;
+    }
+  }
+
+  return false;
+}
+
+
+      let picked = [];
+// ✅ 1) 빠른 exact/인덱스 검색(기존 유지)
+picked = picked.concat(orderIndexByMall.get(qMall) || []);
+picked = picked.concat(orderIndexBySabang.get(qKey) || []);
+picked = picked.concat(orderIndexByTracking.get(qLoose) || []);
+if(qDigits) picked = picked.concat(orderIndexByPhone.get(qDigits) || []);
+
+// ✅ 2) 부분 포함 검색(추가)
+// 너무 짧은 글자는 과다 매칭될 수 있어서 2자 이상일 때만 텍스트 포함을 권장
+const allowTextContains = qKey && qKey.length >= 2;
+
+// 숫자 검색은 3자리 이상이면 의미 있게 매칭되니 허용
+const allowDigitContains = qDigits && qDigits.length >= 3;
+
+if(allowTextContains || allowDigitContains){
+  const partialHits = orderAllForRecipientScan.filter(o =>
+    rowMatchesPartial_(o,
+      allowTextContains ? qKey : "",
+      allowTextContains ? qLoose : "",
+      allowDigitContains ? qDigits : ""
+    )
+  );
+  picked = picked.concat(partialHits);
+}
 
       const seen = new Set();
       const outRows = [];
